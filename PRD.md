@@ -46,16 +46,34 @@
 - **시드 고정 랜덤**(mulberry32): 같은 시드 = 같은 움직임 → 재현·아카이브·강의 시연 가능.
 - 명시적 신호 라우팅(패치 UI)은 v0.2로 미룬다.
 
-## 5. 표기법 v0 (기보법)
+## 5. 표기법 v0.2 (기보법)
 
 ```
-코어@레벨(핵심 파라미터) + 코어@레벨 ×exa값
+코어@레벨[대상←앵커] + 코어@레벨[대상] ×exa값
 ```
 
-- 점프: `Bounce@entity + Squash(vel.y→scale)@deform ×exa1.8`
-- 늘어나는 새떼: `Boids@flock + Elastic(vel→stretch)@deform`
+- 점프: `Bounce(g, e)@entity + Squash(vel.y→scale)@deform ×exa1.8`
+- 늘어나는 새떼: `Boids(분리·정렬·응집)@flock + Elastic(vel→stretch)@deform ×exa1.8`
+- 공에 꼬리: `Bounce@entity[ball] + Squash@deform[ball] + Spring(chain)@deform[tail←ball]`
+- 해·행성·달: `Orbit@entity[sun] + Orbit@entity[planet] + Orbit@entity[moon←planet]`
 
-뷰어는 현재 패치의 표기법 문자열을 항상 표시한다 (강의 화면 겸용).
+**대상 `[…]`** — 그 코어가 어느 엔티티에 걸리는지. 생략하면 전체(`*`)다.
+`points`(지오메트리)는 단독 소유라 겹치면 엔진이 경고하고, 답은 대상을 갈라 거는 것이다.
+**앵커 `←`** — 코어가 참조하는 다른 엔티티. 체인의 뿌리, 공전의 중심 같은 것.
+
+**주소 체계 `id@target`** — 같은 코어를 여러 번 걸 수 있으므로 파라미터는 코어 id가 아니라
+**패치 key**로 가른다. 스택에서 유일하면 `id`, 겹치면 `id@대상`이다.
+프리셋의 `overrides`와 공유 링크의 `?p=`가 같은 주소를 쓴다:
+
+```
+?p=squash.exa:2.5            대상이 하나뿐인 코어
+?p=orbit@moon.rev:0.4        같은 코어를 여러 번 건 경우
+```
+
+exa를 가진 코어가 하나면 문자열 끝에 한 번, 둘 이상이면 코어마다 붙인다.
+
+뷰어는 현재 패치의 표기법 문자열을 항상 표시하고, `⧉ 공유`가 **표기법 + 링크를 함께** 복사한다 —
+공유물이 스스로를 설명하도록. 아카이브 항목·SNS 캡션·학생 제출이 같은 포맷을 쓴다.
 
 ## 6. v0.1 스코프 — 오늘
 
@@ -132,13 +150,29 @@ interface Core<P = Record<string, number>> {
 
 v0.2+: `nakcha, ital` 스코어 필드 — ATLAS와 축 통일.
 
+**단일 소스**: `cores.json`은 `src/lib/cores/index.ts` 레지스트리에서 생성된다(`pnpm gen:meta`).
+손으로 고치지 않는다. `pnpm check:cores`가 새 코어의 게이트다 —
+필수 메타·파라미터 범위·deform의 exa·순수성·선언되지 않은 채널 쓰기까지 본다.
+
 ## 12. 시드 백로그 (v0.2+ 후보 30)
 
 - **물리**: 진자·이중진자(loop/steady) · 스프링 체인=팔로우스루(event) · 케플러 궤도(loop) · 마찰 감쇠 정지(event) · 충돌 운동량 교환(event) · 부력 떠오름(steady)
 - **화학**: 결정 성장 DLA(selfsim) · 반응확산 그레이-스콧(steady) · 브라운 운동(steady) · 동결=격자 스냅(event) · 연소 전파(event) · 결합=자석 도킹(event)
 - **생물**: L-system 성장(selfsim) · 섬모 파동 이동(loop) · 주화성 끌림(steady) · 세포 분열(event) · 심장 박동=수축 펄스(loop) · 개미 페로몬 길(steady)
-- **지구·우주**: 자전+공전 중첩(loop) · 조석=두 인력(loop) · 성운 소용돌이=컬 노이즈(steady) · 단층 스틱슬립(event) · 유성 낙하·소멸(event) · 침식 하강(steady)
+- **지구·우주**: ~~자전+공전 중첩(loop)~~ → **합성으로 해소** · 조석=두 인력(loop) · 성운 소용돌이=컬 노이즈(steady) · 단층 스틱슬립(event) · 유성 낙하·소멸(event) · 침식 하강(steady)
 - **수학**: 로렌츠 어트랙터(steady) · 푸리에 에피사이클(loop) · 라이프 게임 CA(steady) · 펄린 노이즈 필드(steady) · 프랙탈 줌(selfsim) · 파동 간섭(loop)
+
+### 12-b. 합성으로 해소 (새 코어 불필요)
+
+백로그의 모든 항목이 새 코어를 요구하는 건 아니다. **기존 코어를 다르게 걸어서** 되는 것이
+있고, 그걸 알아보는 것 자체가 시스템이 제 몫을 한다는 증거다. 여기에 모은다.
+
+| 백로그 항목 | 어떻게 해소됐나 | 표기법 |
+|---|---|---|
+| 자전+공전 중첩 (지구·우주/loop) | `Orbit` 하나를 세 번 걸었다. 반지름 0 = 제자리 자전, 앵커 = 공전의 중심 | `Orbit@entity[sun] + Orbit@entity[planet] + Orbit@entity[moon←planet]` |
+
+새 코어를 만들기 전에 이 표를 먼저 본다. **16칸 매트릭스는 지도이지 할당량이 아니다** —
+구조적으로 비어 있는 게 자연스러운 칸도 있고, 축이 다 열린 뒤의 깊이는 칸이 아니라 **장면**에서 온다.
 
 ## 13. 강의 연동 초안 (모션워크샵4 · 4주 블록)
 

@@ -34,6 +34,10 @@
 
 	// $state.raw — 재할당만 반응형. 월드를 깊은 프록시로 감싸면 60fps 변형이 다 추적돼 느려진다.
 	let engine = $state.raw<Engine | null>(null);
+	/** 프리셋이 주는 값 (코어 기본값 + overrides). 공유 URL은 여기서 벗어난 것만 싣는다. */
+	let baseline: Record<string, Params> = {};
+	let shared = $state<'idle' | 'ok' | 'fail'>('idle');
+	let sharedAt = 0;
 
 	const demo = $derived(demoById(demoId));
 
@@ -64,6 +68,8 @@
 			Object.assign(engine.values[id], over);
 		}
 		engine.trailLen = d.trailLen;
+		baseline = {};
+		for (const pt of engine.stack) baseline[pt.key] = { ...engine.values[pt.key] };
 		if (firstBuild) applyUrlParams(engine);
 		engine.reset();
 		if (firstBuild) {
@@ -87,6 +93,53 @@
 	function setParam(item: { key: string; vals: Params }, key: string, v: number) {
 		item.vals[key] = v;
 		if (engine) engine.values[item.key][key] = v;
+	}
+
+	const round = (v: number) => Number(v.toFixed(6));
+
+	/**
+	 * 지금 화면 그대로를 여는 링크. 프리셋 기본값에서 벗어난 것만 실어 짧게 유지한다.
+	 * 일시정지 중이면 `t`까지 실어서 **바로 그 프레임**이 다시 열린다.
+	 */
+	function shareUrl(): string {
+		const d = demoById(demoId);
+		const parts = [`demo=${demoId}`];
+		if (seedText !== String(d.seed)) parts.push(`seed=${encodeURIComponent(seedText)}`);
+		if (trail !== d.trail) parts.push(`trail=${trail ? 1 : 0}`);
+		if (!playing && engine) parts.push(`t=${engine.world.t.toFixed(3)}`);
+
+		const diffs: string[] = [];
+		for (const item of ui) {
+			const base = baseline[item.key] ?? {};
+			for (const def of item.core.params) {
+				const v = round(engine?.values[item.key][def.key] ?? def.value);
+				if (v !== round(base[def.key] ?? def.value)) diffs.push(`${item.key}.${def.key}:${v}`);
+			}
+		}
+		if (diffs.length) parts.push(`p=${diffs.join(',')}`);
+		return `${location.origin}${location.pathname}?${parts.join('&')}`;
+	}
+
+	/**
+	 * 표기법 + 링크를 함께 복사한다. 링크만으로는 무엇을 보는지 알 수 없다 —
+	 * 표기법이 붙으면 공유물이 스스로를 설명한다 (아카이브 항목 · SNS 캡션 · 학생 제출 포맷).
+	 */
+	const shareText = () => `${notation}\n${shareUrl()}`;
+
+	async function copyShare() {
+		const text = shareText();
+		try {
+			await navigator.clipboard.writeText(text);
+			shared = 'ok';
+		} catch {
+			shared = 'fail';
+			console.log(text); // 클립보드가 막혔을 때의 마지막 수단
+		}
+		sharedAt = Date.now();
+		const at = sharedAt;
+		setTimeout(() => {
+			if (sharedAt === at) shared = 'idle';
+		}, 2200);
 	}
 
 	function reset() {
@@ -170,6 +223,8 @@
 			playing = !playing;
 		} else if (ev.key === 'r' || ev.key === 'R') {
 			reset();
+		} else if (ev.key === 'c' || ev.key === 'C') {
+			copyShare();
 		}
 	}
 </script>
@@ -202,11 +257,21 @@
 				<p class="form">{demo.form}</p>
 			</section>
 
-			<section class="block row">
-				<button class="primary" onclick={() => (playing = !playing)}>
-					{playing ? '❙❙ 일시정지' : '▶ 재생'}
-				</button>
-				<button onclick={reset}>↺ 리셋</button>
+			<section class="block">
+				<div class="row">
+					<button class="primary" onclick={() => (playing = !playing)}>
+						{playing ? '❙❙ 일시정지' : '▶ 재생'}
+					</button>
+					<button onclick={reset}>↺ 리셋</button>
+					<button data-testid="share" onclick={copyShare}>
+						{shared === 'ok' ? '✓ 복사됨' : shared === 'fail' ? '복사 실패' : '⧉ 공유'}
+					</button>
+				</div>
+				<p class="form" class:ok={shared === 'ok'}>
+					{shared === 'ok'
+						? '표기법 + 링크를 복사했습니다. 일시정지 중이면 그 프레임까지 담깁니다.'
+						: '공유는 표기법과 링크를 함께 복사합니다 (C)'}
+				</p>
 			</section>
 
 			<section class="block row">
@@ -376,6 +441,9 @@
 		font-size: 0.72rem;
 		color: #7d8cab;
 		line-height: 1.45;
+	}
+	.form.ok {
+		color: #8fb4ff;
 	}
 	button {
 		background: #1a2338;

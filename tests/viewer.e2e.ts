@@ -103,3 +103,45 @@ test('같은 코어를 두 번 걸면 파라미터가 갈린다', async ({ page 
 	await expect(planet).toHaveValue('7');
 	await expect(page.locator('.block.warn')).toHaveCount(0);
 });
+
+test.describe('공유', () => {
+	test.use({ permissions: ['clipboard-read', 'clipboard-write'] });
+
+	test('표기법 + 링크를 함께 복사한다', async ({ page }) => {
+		await page.goto('/?demo=orbit&seed=1&trail=1');
+		await page.locator('canvas').waitFor();
+		await page.getByTestId('share').click();
+		await expect(page.getByTestId('share')).toHaveText('✓ 복사됨');
+
+		const text = await page.evaluate(() => navigator.clipboard.readText());
+		const [notation, url] = text.split('\n');
+		expect(notation).toBe(
+			'Orbit(spin:rev)@entity[sun] + Orbit(spin:rev)@entity[planet] + ' +
+				'Orbit(spin:rev)@entity[moon←planet]'
+		);
+		// 프리셋 기본값 그대로면 링크는 짧다
+		expect(url).toContain('?demo=orbit');
+		expect(url).not.toContain('p=');
+		expect(url).not.toContain('t=');
+	});
+
+	test('만진 것만 링크에 실리고, 그 링크가 같은 상태를 다시 연다', async ({ page }) => {
+		await page.goto('/?demo=orbit&seed=1&trail=1');
+		await page.locator('canvas').waitFor();
+		await page.getByTestId('p-orbit@moon-rev').fill('0.4');
+		await page.getByRole('button', { name: '❙❙ 일시정지' }).click();
+		await page.getByTestId('share').click();
+
+		const text = await page.evaluate(() => navigator.clipboard.readText());
+		const url = text.split('\n')[1];
+		expect(url).toContain('p=orbit@moon.rev:0.4');
+		expect(url).toMatch(/t=\d+\.\d+/); // 일시정지 중이라 프레임까지 담긴다
+		expect(url).not.toContain('orbit@planet'); // 안 만진 건 안 실린다
+
+		// 그 링크를 열면 같은 상태
+		await page.goto(url);
+		await page.locator('canvas').waitFor();
+		await expect(page.getByTestId('p-orbit@moon-rev')).toHaveValue('0.4');
+		await expect(page.getByRole('button', { name: '▶ 재생' })).toBeVisible();
+	});
+});

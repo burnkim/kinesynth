@@ -73,8 +73,10 @@ src/lib/cores/index.ts                          ← 레지스트리. 코어를 �
 src/lib/meta/    cores.json                     ← **생성물**. 손으로 고치지 않는다 (pnpm gen:meta)
 src/lib/         demos.ts  render.ts
 src/routes/      +page.svelte                   ← 뷰어
-tests/           shots.e2e.ts  viewer.e2e.ts
+tests/           shots.e2e.ts  viewer.e2e.ts  live.e2e.ts
+scripts/         gen-meta.mjs  check-cores.mjs
 shots/           스크린샷 기록
+notes/           발견 노트 — 아카이브의 최소 단위
 ```
 
 **코어 파일 = 강의 자료.** 파일당 ~100줄, 상단 주석에 원리 한 줄 + 표기법.
@@ -133,6 +135,21 @@ overrides: { 'orbit@moon': { spin: 1 } }               // 조석 고정
 CDN에서 정적으로 나간다. `vercel.json`이 SvelteKit 프리셋을 고정한다.
 배포 후 `pnpm smoke`로 실제 URL에서 코어 스택·URL 파라미터·프레임레이트를 확인한다.
 
+## 공유
+
+뷰어의 `⧉ 공유` (단축키 `C`)는 **표기법과 링크를 함께** 복사한다.
+
+```
+Orbit(spin:rev)@entity[sun] + Orbit(spin:rev)@entity[planet] + Orbit(spin:rev)@entity[moon←planet]
+https://kinesynth.vercel.app/?demo=orbit&trail=1&p=orbit@moon.rev:0.4
+```
+
+링크만으로는 무엇을 보는지 알 수 없다. 표기법이 붙으면 공유물이 스스로를 설명한다 —
+그대로 아카이브 항목이 되고, SNS 캡션이 되고, 학생 제출 포맷이 된다.
+프리셋 기본값에서 벗어난 것만 실어 링크는 짧게 유지되고, **일시정지 중이면 그 프레임까지** 담긴다.
+
+발견한 것은 [`notes/`](notes/)에 한 건씩 남긴다 — 표기법·링크·그림·수치 네 가지로.
+
 ## 조작
 
-`Space` 재생/일시정지 · `R` 리셋 · 슬라이더는 ParamDef에서 자동 생성된다.
+`Space` 재생/일시정지 · `R` 리셋 · `C` 공유 복사 · 슬라이더는 ParamDef에서 자동 생성된다.
