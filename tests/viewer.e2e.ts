@@ -87,3 +87,19 @@ test('write mode — vel을 set하는 코어가 add를 지우면 경고한다', 
 	await expect(page.locator('.block.warn')).toContainText('add를 지운다');
 	expect(warn.some((m) => m.includes('kinesynth'))).toBe(true);
 });
+
+test('같은 코어를 두 번 걸면 파라미터가 갈린다', async ({ page }) => {
+	await page.goto('/?demo=orbit&seed=1');
+	await page.locator('canvas').waitFor();
+
+	// 패치 key가 id@대상으로 갈려 슬라이더가 따로 생긴다
+	const planet = page.getByTestId('p-orbit@planet-spin');
+	const moon = page.getByTestId('p-orbit@moon-spin');
+	await expect(planet).toHaveValue('7');
+	await expect(moon).toHaveValue('1'); // 조석 고정
+
+	// 한쪽을 만져도 다른 쪽은 그대로
+	await moon.fill('4');
+	await expect(planet).toHaveValue('7');
+	await expect(page.locator('.block.warn')).toHaveCount(0);
+});

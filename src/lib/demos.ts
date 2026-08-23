@@ -19,6 +19,7 @@ import { dla } from './cores/dla';
 import { fractalZoom } from './cores/fractalZoom';
 import { noiseField } from './cores/noiseField';
 import { fourier } from './cores/fourier';
+import { orbit } from './cores/orbit';
 
 export interface Demo {
 	id: string;
@@ -27,7 +28,7 @@ export interface Demo {
 	form: string;
 	/** 코어만 적으면 대상은 '*'. 갈라 걸려면 { core, target, anchor }로 적는다. */
 	patch: (Core | Patch)[];
-	/** coreId → 이 프리셋에서만 바꿀 기본값 */
+	/** 패치 key → 이 프리셋에서만 바꿀 기본값. 같은 코어를 두 번 걸면 key가 `id@대상`이 된다. */
 	overrides?: Record<string, Params>;
 	trail: boolean;
 	/** 일부러 소유 규칙을 어긴 예시 — 경고가 어떻게 생기는지 보여 주려고 둔다 (강의 W4). */
@@ -116,6 +117,25 @@ export const demos: Demo[] = [
 		patch: [fourier],
 		trail: true,
 		trailLen: 900,
+		seed: 1
+	},
+	{
+		id: 'orbit',
+		title: 'Orbit · 자전 + 공전',
+		form: '해 · 행성 · 달 — 한 코어를 세 번 걸었다. 달은 조석 고정(자전 1회/공전)',
+		// 같은 코어를 세 번 건다. 파라미터는 패치 key(id@대상)로 갈린다.
+		patch: [
+			{ core: orbit, target: 'sun' },
+			{ core: orbit, target: 'planet' },
+			{ core: orbit, target: 'moon', anchor: 'planet' }
+		],
+		overrides: {
+			'orbit@sun': { radius: 0, rev: 0.05, spin: 2.5, r: 34 },
+			'orbit@planet': { radius: 0.62, rev: 0.05, spin: 7, r: 22, phase: 0.12 },
+			'orbit@moon': { radius: 0.17, rev: 0.32, spin: 1, r: 11 }
+		},
+		trail: true,
+		trailLen: 1300,
 		seed: 1
 	},
 	{

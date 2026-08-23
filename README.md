@@ -34,6 +34,7 @@ pnpm check:cores  # 코어 검증 (메타·파라미터 범위·순수성)
 | Bounce + Squash + Spring | `Bounce@entity[ball] + Squash@deform[ball] + Spring@deform[tail←ball]` | physics / entity+deform / event |
 | NoiseField + Boids | `NoiseField(flow)@space + Boids@flock + Elastic@deform` | math+bio / space+flock+deform / steady |
 | Fourier Epicycles | `Fourier(N항)@entity` | math / entity / loop |
+| Orbit · 자전 + 공전 | `Orbit@entity[sun] + Orbit@entity[planet] + Orbit@entity[moon←planet]` | earth / entity / loop |
 
 - **합성 = 코어 스택.** 패치 케이블 없이 채널 공유로 모듈레이션이 일어난다 —
   Bounce가 쓴 `vel`과 `sig.impact`를 Squash가 읽는다. 실행 순서는 레벨 순
@@ -42,8 +43,8 @@ pnpm check:cores  # 코어 검증 (메타·파라미터 범위·순수성)
   스타일 = 법칙 × 과장.
 - **결정론.** 고정 타임스텝 1/60 + 시드 고정 난수(mulberry32) → 같은 시드 = 같은 움직임.
 
-코어 10개. 레벨 4종(space·flock·entity·deform)과 반복 4종(loop·steady·selfsim·event)이 모두 열려 있다.
-도메인은 physics·math·bio·chem 4종 — earth만 비어 있다.
+코어 11개. 레벨 4종(space·flock·entity·deform), 반복 4종(loop·steady·selfsim·event),
+도메인 5종(physics·math·bio·chem·earth)이 **모두 열려 있다**.
 
 ## URL로 상태 공유
 
@@ -56,17 +57,18 @@ pnpm check:cores  # 코어 검증 (메타·파라미터 범위·순수성)
 
 | 파라미터 | 뜻 |
 |---|---|
-| `demo` | 프리셋 id (`lissajous` · `bounce-squash` · `boids-elastic` · `lissajous-spring` · `dla` · `dla-zoom`) |
+| `demo` | 프리셋 id — 뷰어 셀렉터의 값 (`bounce-tail` · `orbit` · `fourier` · `noise-flock` · …) |
 | `seed` | 숫자 또는 문자열 (문자열은 해시) |
 | `trail` | `1`이면 궤적 |
 | `t` | 그 시각까지 고정 스텝으로 감고 멈춘다 |
-| `p` | `코어.파라미터:값` 쉼표 구분 |
+| `p` | `패치key.파라미터:값` 쉼표 구분 (`squash.exa:2.5`, `orbit@moon.spin:1`) |
 
 ## 구조
 
 ```
 src/lib/core/    types  rand  engine  noise      ← 순수 TS. DOM·Svelte import 금지
-src/lib/cores/   lissajous bounce squash boids elastic spring dla fractalZoom noiseField fourier
+src/lib/cores/   lissajous bounce squash boids elastic spring dla
+                 fractalZoom noiseField fourier orbit
 src/lib/cores/index.ts                          ← 레지스트리. 코어를 만들면 여기 등록
 src/lib/meta/    cores.json                     ← **생성물**. 손으로 고치지 않는다 (pnpm gen:meta)
 src/lib/         demos.ts  render.ts
@@ -92,6 +94,21 @@ patch: [
 ```
 
 → `Bounce(g, e)@entity[ball] + Squash(vel.y→scale)@deform[ball]×exa1.8 + Spring(chain)@deform[tail←ball]×exa1.8`
+
+**같은 코어를 여러 번** 걸 수도 있다. 그때 파라미터는 패치 key로 갈린다 — 유일하면 `id`,
+겹치면 `id@대상`. `overrides`와 URL 파라미터가 같은 key를 쓴다:
+
+```ts
+patch: [
+  { core: orbit, target: 'sun' },
+  { core: orbit, target: 'planet' },
+  { core: orbit, target: 'moon', anchor: 'planet' }   // 행성을 도는 달
+],
+overrides: { 'orbit@moon': { spin: 1 } }               // 조석 고정
+```
+```
+/?demo=orbit&p=orbit@moon.rev:0.4
+```
 
 수치 채널은 write mode로 합성한다: **set 하나 + add 여럿**. `scale`은 엔진이 매 스텝 (1,1)로
 되돌리므로 deform 코어들이 `mul`로 겹쳐 쌓인다. 대상을 안 적으면 `'*'`(전체)라서 기존 프리셋은 그대로 돈다.

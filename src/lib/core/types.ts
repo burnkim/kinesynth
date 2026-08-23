@@ -130,6 +130,17 @@ export interface Patch {
 	anchor?: Selector;
 }
 
+/**
+ * 엔진이 정규화한 스택 항목. 같은 코어를 두 번 걸 수 있으므로(예: 행성과 달)
+ * 파라미터 레코드는 코어 id가 아니라 **key**로 가른다: 유일하면 `id`, 겹치면 `id@대상`.
+ */
+export interface StackItem {
+	core: Core;
+	target: Selector;
+	anchor?: Selector;
+	key: string;
+}
+
 /** 엔진이 코어에게 건네는 실행 맥락 — 라우팅의 결과. */
 export interface StepCtx {
 	/** 이 패치가 작용할 엔티티들. 코어는 w.entities가 아니라 이걸 순회한다. */

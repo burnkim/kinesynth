@@ -211,3 +211,20 @@ test('fourier — 원 위의 원이 글자를 그린다', async ({ page }) => {
 	// 항이 모자라면 높은 주파수가 빠져 모서리부터 뭉개진다
 	await pair(page, shots, ['N=3 — 뭉개짐', 'N=16 — 글자가 된다'], `${SHOTS}/11-fourier.png`);
 });
+
+test('orbit — 자전 + 공전 중첩 (한 코어를 세 번)', async ({ page }) => {
+	await page.goto('/?demo=orbit&seed=1&trail=1&t=20');
+	await ready(page);
+	await expect(page.getByTestId('notation')).toHaveText(
+		'Orbit(spin:rev)@entity[sun] + Orbit(spin:rev)@entity[planet] + ' +
+			'Orbit(spin:rev)@entity[moon←planet]'
+	);
+	await expect(page.locator('.badge')).toContainText('3 entities');
+
+	// 세계에서 본 달의 궤적은 원 위의 원. 두 주기의 비가 고리 수를 정한다.
+	const shots: string[] = [];
+	for (const rev of [0.15, 0.4]) {
+		shots.push(await shot(page, `/?demo=orbit&seed=1&trail=1&t=20&p=orbit@moon.rev:${rev}`));
+	}
+	await pair(page, shots, ['달 : 행성 = 3 : 1', '= 8 : 1'], `${SHOTS}/12-orbit.png`);
+});

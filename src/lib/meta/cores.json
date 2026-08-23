@@ -307,6 +307,40 @@
 			],
 			"status": "done",
 			"createdAt": "2026-08-23"
+		},
+		{
+			"id": "orbit",
+			"name_ko": "자전 + 공전",
+			"name_en": "Orbit",
+			"domain": "earth",
+			"level": "entity",
+			"repeat": "loop",
+			"principle_ko": "한 몸이 두 주기를 산다 — 제자리 돎과 큰 원 돎이 겹친다.",
+			"rule": "θ = 2π(rev·t + phase) · pos = 중심 + (cos θ, sin θ)·radius · rot = 2π(spin·rev·t + phase) · spin은 공전 1회당 자전수: 1이면 조석 고정(같은 면이 늘 중심을 향함) · 앵커를 주면 그 몸이 중심 → 세계에서 본 궤적은 원 위의 원 · 균일 각속도(케플러 면적속도는 별도 코어)",
+			"params": [
+				"radius",
+				"rev",
+				"spin",
+				"phase",
+				"r"
+			],
+			"notation": "Orbit(spin:rev)@entity",
+			"reads": [],
+			"writes": [
+				"pos:set",
+				"vel:set",
+				"rot:set",
+				"points:set",
+				"closed:set"
+			],
+			"anchor": "공전의 중심이 될 엔티티. 없으면 화면 중심을 돈다.",
+			"refs": [
+				"조석 고정 — 달의 자전 주기와 공전 주기가 27.32일로 같다",
+				"태양일(24h)과 항성일(23h 56m 4s)의 차이 = 자전과 공전의 중첩",
+				"주전원(epicycle) — 원 위의 원, 프톨레마이오스 2세기"
+			],
+			"status": "done",
+			"createdAt": "2026-08-23"
 		}
 	]
 }

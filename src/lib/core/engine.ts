@@ -26,6 +26,7 @@ import {
 	type Params,
 	type Patch,
 	type Selector,
+	type StackItem,
 	type StepCtx,
 	type Vec,
 	type World
@@ -110,9 +111,9 @@ const isSoleOwner = (c: string) => c === 'points' || c === 'closed';
 
 export interface Engine {
 	readonly world: World;
-	readonly stack: Patch[];
+	readonly stack: StackItem[];
 	seed: number;
-	/** coreId → 현재 파라미터 값. 뷰어 슬라이더가 직접 수정한다. */
+	/** 패치 key → 현재 파라미터 값. 뷰어 슬라이더가 직접 수정한다. */
 	readonly values: Record<string, Params>;
 	/** 소유 규칙 위반 목록. 비어 있어야 정상. */
 	readonly warnings: string[];
@@ -125,13 +126,27 @@ export interface Engine {
 	notation(): string;
 }
 
-const asPatch = (x: Core | Patch): Patch => ('core' in x ? x : { core: x });
+/**
+ * 입력을 스택 항목으로 정규화한다. 레벨 순 정렬(같은 레벨은 등록 순서 유지) +
+ * 파라미터 key 부여 — 같은 코어가 두 번 이상 나오면 `id@대상`으로 갈라 준다.
+ */
+function normalize(input: (Core | Patch)[]): StackItem[] {
+	const patches: Patch[] = input.map((x) => ('core' in x ? { ...x } : { core: x }));
+	const count = new Map<string, number>();
+	for (const p of patches) count.set(p.core.meta.id, (count.get(p.core.meta.id) ?? 0) + 1);
 
-/** 레벨 순으로 정렬 — 같은 레벨끼리는 등록 순서 유지 (안정 정렬). */
-function sortByLevel(patches: Patch[]): Patch[] {
-	return [...patches].sort(
-		(a, b) => LEVEL_ORDER.indexOf(a.core.meta.level) - LEVEL_ORDER.indexOf(b.core.meta.level)
-	);
+	return patches
+		.map((p) => {
+			const id = p.core.meta.id;
+			const target = p.target ?? ALL;
+			return {
+				core: p.core,
+				target,
+				anchor: p.anchor,
+				key: (count.get(id) ?? 1) > 1 ? `${id}@${target}` : id
+			};
+		})
+		.sort((a, b) => LEVEL_ORDER.indexOf(a.core.meta.level) - LEVEL_ORDER.indexOf(b.core.meta.level));
 }
 
 function defaults(core: Core): Params {
@@ -144,36 +159,35 @@ function defaults(core: Core): Params {
  * 표기법 문자열: `코어@레벨[대상] + … ×exa값` (PRD §5)
  * exa를 가진 코어가 하나면 뒤에 한 번만 붙이고(PRD 예시 형태), 둘 이상이면 코어마다 붙인다.
  */
-function buildNotation(stack: Patch[], values: Record<string, Params>): string {
-	const exas = stack.filter((p) => typeof values[p.core.meta.id]?.exa === 'number');
+function buildNotation(stack: StackItem[], values: Record<string, Params>): string {
+	const exas = stack.filter((p) => typeof values[p.key]?.exa === 'number');
 	const perCore = exas.length > 1;
 
 	const base = stack
 		.map((p) => {
-			const t = p.target ?? ALL;
-			const where = t === ALL && !p.anchor ? '' : `[${t}${p.anchor ? `←${p.anchor}` : ''}]`;
-			const v = values[p.core.meta.id]?.exa;
+			const where = p.target === ALL && !p.anchor ? '' : `[${p.target}${p.anchor ? `←${p.anchor}` : ''}]`;
+			const v = values[p.key]?.exa;
 			const tail = perCore && typeof v === 'number' ? `×exa${v.toFixed(1)}` : '';
 			return `${p.core.meta.notation}${where}${tail}`;
 		})
 		.join(' + ');
 
 	if (perCore || exas.length === 0) return base;
-	return `${base} ×exa${values[exas[0].core.meta.id].exa.toFixed(1)}`;
+	return `${base} ×exa${values[exas[0].key].exa.toFixed(1)}`;
 }
 
 /**
  * 소유 규칙 검사. 스택을 세울 때 한 번만 돈다 — 매 프레임 비용 0.
  * 고치라는 게 아니라 **무엇이 무엇을 덮어쓰는지 보이게** 하는 게 목적이다.
  */
-function auditWrites(stack: Patch[]): string[] {
+function auditWrites(stack: StackItem[]): string[] {
 	const out: string[] = [];
 	for (let i = 0; i < stack.length; i++) {
 		for (let j = i + 1; j < stack.length; j++) {
 			const a = stack[i];
 			const b = stack[j];
-			const ta = a.target ?? ALL;
-			const tb = b.target ?? ALL;
+			const ta = a.target;
+			const tb = b.target;
 			for (const wa of a.core.meta.writes) {
 				for (const wb of b.core.meta.writes) {
 					if (!channelsOverlap(wa.channel, wb.channel)) continue;
@@ -203,9 +217,9 @@ export function createEngine(
 	input: (Core | Patch)[],
 	opts: { seed: number; bounds: Bounds }
 ): Engine {
-	const stack = sortByLevel(input.map(asPatch));
+	const stack = normalize(input);
 	const values: Record<string, Params> = {};
-	for (const p of stack) values[p.core.meta.id] = defaults(p.core);
+	for (const p of stack) values[p.key] = defaults(p.core);
 
 	const warnings = auditWrites(stack);
 	for (const m of warnings) console.warn(`[kinesynth] ${m}`);
@@ -219,7 +233,7 @@ export function createEngine(
 	// ctx 객체도 한 번만 만들고 필드만 갈아 끼운다 — 매 스텝 할당 0.
 	const routes = stack.map(() => ({ list: [] as Entity[], rev: -1 }));
 	const ctxs: StepCtx[] = stack.map((p) => {
-		const sel = p.target ?? ALL;
+		const sel = p.target;
 		const tags = parseSelector(sel);
 		const ctx: StepCtx = {
 			targets: [],
@@ -244,7 +258,7 @@ export function createEngine(
 
 	function ctxOf(i: number): StepCtx {
 		const p = stack[i];
-		const sel = p.target ?? ALL;
+		const sel = p.target;
 		const ctx = ctxs[i];
 		if (sel === ALL) {
 			ctx.targets = world.entities; // 전체면 거를 것도 없다
@@ -276,7 +290,7 @@ export function createEngine(
 		resetScale();
 		for (let i = 0; i < stack.length; i++) {
 			const p = stack[i];
-			p.core.step(world, values[p.core.meta.id], dt, ctxOf(i));
+			p.core.step(world, values[p.key], dt, ctxOf(i));
 		}
 		world.t += dt;
 		record();
@@ -311,7 +325,7 @@ export function createEngine(
 			// 코어는 ctx.spawn으로 엔티티를 들인다 — 대상 태그가 자동으로 붙는다.
 			for (let i = 0; i < stack.length; i++) {
 				const p = stack[i];
-				p.core.init?.(world, values[p.core.meta.id], ctxOf(i));
+				p.core.init?.(world, values[p.key], ctxOf(i));
 			}
 		},
 		setBounds(b: Bounds) {

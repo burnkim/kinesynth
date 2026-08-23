@@ -179,3 +179,32 @@
 | **deform** | – | Elastic | – | Squash · Spring |
 
 레벨 4/4 · 반복 4/4 · 도메인 4/5 (earth 공백). 16칸 중 8칸.
+
+---
+
+# v0.2 · earth 도메인
+
+- [x] `cores/orbit.ts` — **earth**/entity/loop. `Orbit(spin:rev)@entity`.
+      θ = 2π(rev·t + phase) → pos, rot = 2π(spin·rev·t + phase).
+      `spin`은 **공전 1회당 자전수** — 1이면 조석 고정(같은 면이 늘 중심을 향한다).
+      앵커를 주면 그 몸을 중심으로 돈다 → 세계에서 본 궤적은 원 위의 원.
+- [x] **엔진: 파라미터를 패치 key로 가른다.** 같은 코어를 두 번 걸면 `values`가 공유돼
+      행성과 달이 같은 파라미터를 쓰는 문제가 있었다. key = 유일하면 `id`, 겹치면 `id@대상`.
+      `overrides`·URL `?p=`·슬라이더 testid가 전부 이 key를 쓴다 (`?p=orbit@moon.spin:1`).
+- [x] 데모 `orbit` — 해·행성·달. **한 코어를 세 번 걸었다.** 경고 0.
+      `Orbit@entity[sun] + Orbit@entity[planet] + Orbit@entity[moon←planet]`
+- [x] `shots/12` — 달:행성 주기비 3:1 vs 8:1. 두 주기의 비가 고리 수를 정한다.
+- [x] 조석 고정 수치 검증: 900스텝 동안 달의 코와 바깥 방향 어긋남 **최대 0.00°**
+      (행성은 spin 7이라 180°까지 벌어진다)
+
+## 커버리지 (코어 11) — 도메인 5/5 완성
+
+| | loop | steady | selfsim | event |
+|---|---|---|---|---|
+| **space** | – | NoiseField | FractalZoom | – |
+| **flock** | – | Boids | – | – |
+| **entity** | Lissajous · Fourier · Orbit | – | DLA | Bounce |
+| **deform** | – | Elastic | – | Squash · Spring |
+
+physics 4 · math 4 · bio 1 · chem 1 · **earth 1** → 다섯 도메인이 다 열렸다.
+레벨 4/4 · 반복 4/4 · 16칸 중 8칸.

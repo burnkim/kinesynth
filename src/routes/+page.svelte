@@ -29,7 +29,7 @@
 	let trail = $state(q.get('trail') === '1');
 	let notation = $state('');
 	let fps = $state(0);
-	let ui = $state<{ core: Core; target: string; anchor?: string; vals: Params }[]>([]);
+	let ui = $state<{ core: Core; key: string; target: string; anchor?: string; vals: Params }[]>([]);
 	let warnings = $state<string[]>([]);
 
 	// $state.raw — 재할당만 반응형. 월드를 깊은 프록시로 감싸면 60fps 변형이 다 추적돼 느려진다.
@@ -74,18 +74,19 @@
 		// vals는 표시용 반응형 사본. 엔진은 자기 레코드를 읽으므로 setParam이 양쪽 다 쓴다.
 		ui = engine.stack.map((pt) => ({
 			core: pt.core,
-			target: pt.target ?? '*',
+			key: pt.key,
+			target: pt.target,
 			anchor: pt.anchor,
-			vals: { ...engine!.values[pt.core.meta.id] }
+			vals: { ...engine!.values[pt.key] }
 		}));
 		notation = engine.notation();
 		warnings = engine.warnings;
 	}
 
 	/** 슬라이더 → 화면 표시(반응형 사본) + 시뮬레이션(엔진 레코드) 양쪽에 쓴다. */
-	function setParam(item: { core: Core; vals: Params }, key: string, v: number) {
+	function setParam(item: { key: string; vals: Params }, key: string, v: number) {
 		item.vals[key] = v;
-		if (engine) engine.values[item.core.meta.id][key] = v;
+		if (engine) engine.values[item.key][key] = v;
 	}
 
 	function reset() {
@@ -226,7 +227,7 @@
 				</section>
 			{/if}
 
-			{#each ui as item (item.core.meta.id)}
+			{#each ui as item (item.key)}
 				<section class="block core">
 					<div class="core-head">
 						<span class="core-name">{item.core.meta.name}</span>
@@ -248,7 +249,7 @@
 								min={def.min}
 								max={def.max}
 								step={def.step ?? 0.01}
-								data-testid={`p-${item.core.meta.id}-${def.key}`}
+								data-testid={`p-${item.key}-${def.key}`}
 								value={item.vals[def.key]}
 								oninput={(ev) => setParam(item, def.key, ev.currentTarget.valueAsNumber)}
 							/>
