@@ -18,12 +18,27 @@ const FILL = 'rgba(120, 170, 255, 0.13)';
 const GROUND = 'rgba(220, 231, 255, 0.16)';
 const TRAIL = 'rgba(150, 190, 255, 0.34)';
 const DOT_R = 3.2;
+
+// 신호 0 → 1 색 계단. 매 프레임 문자열을 만들지 않으려고 미리 굽는다.
+const HOT: [number, number, number] = [255, 176, 66];
+const COOL: [number, number, number] = [74, 92, 126];
+const HEAT: string[] = Array.from({ length: 17 }, (_, i) => {
+	const t = i / 16;
+	const c = (a: number, b: number) => Math.round(a + (b - a) * t);
+	return `rgb(${c(COOL[0], HOT[0])}, ${c(COOL[1], HOT[1])}, ${c(COOL[2], HOT[2])})`;
+});
+const heat = (v: number): string => HEAT[Math.max(0, Math.min(16, Math.round(v * 16)))];
 const GLOW_LIMIT = 60; // 엔티티가 이보다 많으면 글로우를 끈다 (성능)
 
 export interface DrawOpts {
 	/** 엔진이 기록한 궤적. 없으면 트레일을 그리지 않는다. */
 	trails?: Vec[][];
 	groundY?: number;
+	/**
+	 * 이 `sig` 채널의 값(0~1)으로 엔티티를 물들인다 — 신호를 눈으로 보는 최소 장치.
+	 * 채널을 켜면 점도 하나씩 칠하므로(색이 달라서 묶을 수 없다) 조금 느려진다. 관찰용이다.
+	 */
+	signal?: string;
 }
 
 /** 캔버스를 CSS 크기 × devicePixelRatio로 맞춘다. 크기가 바뀌었으면 true. */
@@ -128,20 +143,33 @@ export function drawWorld(
 		ctx.shadowBlur = 10;
 	}
 
+	const sig = opts.signal;
+
 	// 점은 한 경로에 모아 한 번에 칠한다 — 수백 개여도 드로우 콜은 하나.
 	// 반지름은 월드 단위라 줌을 따라 커진다: 확대하면 구조가 실제로 드러난다.
-	let dots = 0;
+	// (신호 보기가 켜지면 색이 제각각이라 묶을 수 없다 — 하나씩 칠한다.)
 	setWorld(ctx, dpr, cam, cssW, cssH);
-	ctx.beginPath();
-	for (const e of w.entities) {
-		if (e.points.length >= 2) continue;
-		ctx.moveTo(e.pos.x + DOT_R, e.pos.y);
-		ctx.arc(e.pos.x, e.pos.y, DOT_R, 0, Math.PI * 2);
-		dots++;
-	}
-	if (dots > 0) {
-		ctx.fillStyle = STROKE;
-		ctx.fill();
+	if (!sig) {
+		let dots = 0;
+		ctx.beginPath();
+		for (const e of w.entities) {
+			if (e.points.length >= 2) continue;
+			ctx.moveTo(e.pos.x + DOT_R, e.pos.y);
+			ctx.arc(e.pos.x, e.pos.y, DOT_R, 0, Math.PI * 2);
+			dots++;
+		}
+		if (dots > 0) {
+			ctx.fillStyle = STROKE;
+			ctx.fill();
+		}
+	} else {
+		for (const e of w.entities) {
+			if (e.points.length >= 2) continue;
+			ctx.beginPath();
+			ctx.arc(e.pos.x, e.pos.y, DOT_R, 0, Math.PI * 2);
+			ctx.fillStyle = heat(e.sig[sig] ?? 0);
+			ctx.fill();
+		}
 	}
 
 	for (const e of w.entities) {
@@ -154,7 +182,7 @@ export function drawWorld(
 			ctx.fillStyle = FILL; // 면 — 옅은 채움
 			ctx.fill();
 		}
-		ctx.strokeStyle = STROKE;
+		ctx.strokeStyle = sig ? heat(e.sig[sig] ?? 0) : STROKE;
 		ctx.lineWidth = 1.8;
 		ctx.stroke(); // 선 · 면의 윤곽
 	}

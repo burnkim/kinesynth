@@ -22,6 +22,7 @@ import { fourier } from './cores/fourier';
 import { orbit } from './cores/orbit';
 import { flee } from './cores/flee';
 import { seek } from './cores/seek';
+import { panic } from './cores/panic';
 
 export interface Demo {
 	id: string;
@@ -42,6 +43,8 @@ export interface Demo {
 	kind?: 'scene';
 	/** 궤적 기록 길이(고정 스텝 수). 60 = 1초. */
 	trailLen: number;
+	/** 처음부터 켜 둘 「신호 보기」 채널 (sig. 접두사 없이). 없으면 끔. */
+	signal?: string;
 	seed: number;
 }
 
@@ -165,6 +168,31 @@ export const demos: Demo[] = [
 		seed: 3
 	},
 	{
+		id: 'panic-wave',
+		form: '겁이 옆으로 번진다 — 색이 밝을수록 겁먹은 것. 위협을 본 새는 몇 마리뿐이다',
+		title: 'Flee + Panic · 공포의 전파',
+		// 포식자는 Seek으로 몬다 — 반드시 무리를 만나야 전파를 볼 수 있다.
+		// 무리는 뭉쳐 있어야 파동이 가로지르는 게 보인다.
+		patch: [
+			{ core: flee, target: 'bird', anchor: 'hunter' },
+			{ core: panic, target: 'bird' },
+			{ core: boids, target: 'bird' },
+			{ core: seek, target: 'hunter', anchor: 'bird' },
+			{ core: elastic, target: 'bird' }
+		],
+		overrides: {
+			boids: { n: 200, radius: 130, sep: 2.2, ali: 1.5, coh: 1.3, speed: 150 },
+			flee: { radius: 110, force: 1500, sharp: 2 },
+			panic: { radius: 95, gain: 0.9, rise: 16, tau: 1.1, urge: 6 },
+			seek: { speed: 240, turn: 1.4, lead: 0.4, r: 13 },
+			elastic: { vmax: 130, kmax: 7 }
+		},
+		signal: 'panic',
+		trail: false,
+		trailLen: 30,
+		seed: 4
+	},
+	{
 		id: 'scene-murmuration',
 		title: '바람 속 군무',
 		kind: 'scene',
@@ -211,8 +239,11 @@ export const demos: Demo[] = [
 		form: '매가 무리를 쫓는다 — 앞질러 가고, 급선회에 놓치고, 다시 붙는다',
 		// Seek의 앵커는 **그룹**이다. 지금까지 앵커는 하나였는데(체인의 뿌리, 공전의 중심),
 		// 무리를 쫓으려면 무리 전체를 봐야 해서 ctx.anchors가 생겼다.
+		// 전파를 얹어도 사냥의 리듬은 그대로다 (시도 3회로 동일).
+		// 달라지는 건 무리가 반응하는 방식이다 — 위협을 본 몇 마리가 전체를 움직인다.
 		patch: [
 			{ core: flee, target: 'bird', anchor: 'hunter' },
+			{ core: panic, target: 'bird' },
 			{ core: boids, target: 'bird' },
 			{ core: seek, target: 'hunter', anchor: 'bird' },
 			{ core: elastic, target: 'bird' }
@@ -222,6 +253,7 @@ export const demos: Demo[] = [
 			// 포식자가 영영 붙어 있고, 시도의 리듬이 사라진다
 			boids: { n: 150, radius: 110, sep: 2.3, ali: 1.15, coh: 2.2, speed: 155 },
 			flee: { radius: 165, force: 1900, sharp: 2 },
+			panic: { radius: 100, gain: 0.88, rise: 16, tau: 0.9, urge: 6 },
 			seek: { speed: 245, turn: 1.5, lead: 0.45, r: 13 },
 			elastic: { vmax: 135, kmax: 7 }
 		},

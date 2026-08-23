@@ -266,8 +266,9 @@ test('장면 · 사냥 — 그룹 앵커', async ({ page }) => {
 	await ready(page);
 	// Seek의 앵커가 그룹이다: [hunter←bird] — bird 하나가 아니라 bird 전부를 본다
 	await expect(page.getByTestId('notation')).toHaveText(
-		'Flee(거리→회피)@flock[bird←hunter] + Boids(분리·정렬·응집)@flock[bird] + ' +
-			'Seek(가장 가까운 것→요격)@entity[hunter←bird] + Elastic(vel→stretch)@deform[bird] ×exa1.8'
+		'Flee(거리→회피)@flock[bird←hunter] + Panic(이웃→전파)@flock[bird] + ' +
+			'Boids(분리·정렬·응집)@flock[bird] + Seek(가장 가까운 것→요격)@entity[hunter←bird] + ' +
+			'Elastic(vel→stretch)@deform[bird] ×exa1.8'
 	);
 	await expect(page.locator('.badge')).toContainText('151 entities');
 	await expect(page.locator('.block.warn')).toHaveCount(0);
@@ -281,5 +282,26 @@ test('장면 · 사냥 — 그룹 앵커', async ({ page }) => {
 		shots,
 		['21s — 앞질러 간다', '24s — 무리를 가른다', '27s — 놓쳤다'],
 		`${SHOTS}/15-scene-chase.png`
+	);
+});
+
+test('panic — 공포가 개체보다 빨리 번진다', async ({ page }) => {
+	await page.goto('/?demo=panic-wave&t=14.94');
+	await ready(page);
+	await expect(page.getByTestId('notation')).toContainText('Panic(이웃→전파)@flock[bird]');
+	// 이 데모는 「신호 보기」가 sig.panic으로 켜진 채로 열린다
+	await expect(page.getByTestId('signal')).toHaveValue('panic');
+	await expect(page.locator('.block.warn')).toHaveCount(0);
+
+	// 파면이 무리를 가로지른다 — 뜨거운 쪽이 옮겨 간다
+	const shots: string[] = [];
+	for (const t of [14.65, 14.94, 15.22]) {
+		shots.push(await shot(page, `/?demo=panic-wave&t=${t}`));
+	}
+	await strip(
+		page,
+		shots,
+		['14.65s — 매를 본 몇 마리', '14.94s — 옆으로 번진다', '15.22s — 무리를 가로질렀다'],
+		`${SHOTS}/16-panic-wave.png`
 	);
 });

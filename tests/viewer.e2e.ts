@@ -67,7 +67,7 @@ test('모든 프리셋이 소유 규칙을 지킨다', async ({ page }) => {
 		await page.locator('#demo').waitFor();
 		return page.locator('#demo option').evaluateAll((os) => os.map((o) => (o as HTMLOptionElement).value));
 	});
-	expect(ids.length).toBeGreaterThanOrEqual(14);
+	expect(ids.length).toBeGreaterThanOrEqual(15);
 	for (const id of ids) {
 		if (id === 'wind-bounce') continue; // 일부러 어긴 예시
 		await page.goto(`/?demo=${id}`);
@@ -182,4 +182,33 @@ test('그룹 앵커 — 무리가 줄어도 추격이 이어진다', async ({ pa
 
 	await expect(page.locator('.block.warn')).toHaveCount(0);
 	expect(warn.filter((m) => m.includes('kinesynth'))).toEqual([]);
+});
+
+test('신호 보기 — 목록은 코어의 writes 선언에서 나온다', async ({ page }) => {
+	// Lissajous는 sig를 쓰지 않는다 → 선택기 자체가 없다
+	await page.goto('/?demo=lissajous');
+	await page.locator('canvas').waitFor();
+	await expect(page.getByTestId('signal')).toHaveCount(0);
+
+	// Bounce는 sig.impact를 쓴다 → 그것만 나온다
+    await page.goto('/?demo=bounce-squash');
+	await page.locator('canvas').waitFor();
+	const opts = await page
+		.locator('[data-testid="signal"] option')
+		.evaluateAll((os) => os.map((o) => (o as HTMLOptionElement).value));
+	expect(opts).toEqual(['', 'impact']);
+});
+
+test('신호 보기가 실제로 그림을 바꾼다', async ({ page }) => {
+	await page.goto('/?demo=panic-wave&t=14.94&sig=');
+	await page.locator('canvas').waitFor();
+	await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+	const off = await page.locator('.stage').screenshot();
+
+	await page.goto('/?demo=panic-wave&t=14.94&sig=panic');
+	await page.locator('canvas').waitFor();
+	await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+	const on = await page.locator('.stage').screenshot();
+
+	expect(Buffer.compare(off, on)).not.toBe(0);
 });

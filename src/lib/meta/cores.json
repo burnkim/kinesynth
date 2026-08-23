@@ -406,6 +406,39 @@
 			],
 			"status": "done",
 			"createdAt": "2026-08-24"
+		},
+		{
+			"id": "panic",
+			"name_ko": "공포의 전파",
+			"name_en": "Panic",
+			"domain": "bio",
+			"level": "flock",
+			"repeat": "event",
+			"principle_ko": "옆이 튀면 따라 튄다 — 그래서 공포가 개체보다 빨리 번진다.",
+			"rule": "겁 = max(sig.flee, 가장 겁먹은 이웃의 겁 × gain) · 올라갈 땐 rise로 서서히(한 홉의 시간 = 파동 속도), 내려갈 땐 tau로 잦아듦 · vel += (가장 겁먹은 이웃의 vel − vel)·겁·urge·dt (add) · 모두가 한 스텝 전의 겁을 본다",
+			"params": [
+				"radius",
+				"gain",
+				"rise",
+				"tau",
+				"urge"
+			],
+			"notation": "Panic(이웃→전파)@flock",
+			"reads": [
+				"pos",
+				"vel",
+				"sig.flee"
+			],
+			"writes": [
+				"vel:add",
+				"sig.panic:set"
+			],
+			"refs": [
+				"Procaccini et al., Propagating waves of avoidance in starling flocks under predation, Animal Behaviour 2011",
+				"Potts, The chorus-line hypothesis of manoeuvre coordination in avian flocks, Nature 1984"
+			],
+			"status": "done",
+			"createdAt": "2026-08-24"
 		}
 	]
 }

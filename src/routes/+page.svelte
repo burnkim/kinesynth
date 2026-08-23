@@ -27,6 +27,10 @@
 	let seedText = $state(q.get('seed') ?? '1');
 	let playing = $state(!q.has('t'));
 	let trail = $state(q.get('trail') === '1');
+	/** 「신호 보기」 — 엔티티를 이 sig 채널 값으로 물들인다. 빈 문자열이면 끔. */
+	let signal = $state(q.get('sig') ?? '');
+	/** 지금 스택이 쓰는 sig 채널 목록. 코어의 writes 선언에서 뽑는다. */
+	let signals = $state<string[]>([]);
 	let notation = $state('');
 	let fps = $state(0);
 	let ui = $state<{ core: Core; key: string; target: string; anchor?: string; vals: Params }[]>([]);
@@ -87,6 +91,17 @@
 		}));
 		notation = engine.notation();
 		warnings = engine.warnings;
+		// 선언이 또 일한다: 무엇을 볼 수 있는지 코어가 이미 말해 두었다
+		signals = [
+			...new Set(
+				engine.stack.flatMap((pt) =>
+					pt.core.meta.writes
+						.filter((wr) => wr.channel.startsWith('sig.'))
+						.map((wr) => wr.channel.slice(4))
+				)
+			)
+		];
+		if (!signals.includes(signal)) signal = '';
 	}
 
 	/** 슬라이더 → 화면 표시(반응형 사본) + 시뮬레이션(엔진 레코드) 양쪽에 쓴다. */
@@ -106,6 +121,7 @@
 		const parts = [`demo=${demoId}`];
 		if (seedText !== String(d.seed)) parts.push(`seed=${encodeURIComponent(seedText)}`);
 		if (trail !== d.trail) parts.push(`trail=${trail ? 1 : 0}`);
+		if (signal !== (d.signal ?? '')) parts.push(`sig=${signal}`);
 		if (!playing && engine) parts.push(`t=${engine.world.t.toFixed(3)}`);
 
 		const diffs: string[] = [];
@@ -158,9 +174,11 @@
 				booted = true;
 				if (!q.has('trail')) trail = d.trail;
 				if (!q.has('seed')) seedText = String(d.seed);
+				if (!q.has('sig')) signal = d.signal ?? '';
 			} else {
 				trail = d.trail;
 				seedText = String(d.seed);
+				signal = d.signal ?? '';
 			}
 			build();
 		});
@@ -202,7 +220,8 @@
 			const hasGround = engine.stack.some((pt) => pt.core.meta.id === 'bounce');
 			drawWorld(ctx, engine.world, r.width, r.height, {
 				trails: trail ? engine.trails : undefined,
-				groundY: hasGround ? groundY(engine.world) : undefined
+				groundY: hasGround ? groundY(engine.world) : undefined,
+				signal: signal || undefined
 			});
 
 			const n = engine.notation();
@@ -291,6 +310,21 @@
 				/>
 				<label class="chk"><input type="checkbox" bind:checked={trail} /> 트레일</label>
 			</section>
+
+			{#if signals.length}
+				<section class="block">
+					<label class="lbl" for="sig">신호 보기 — 엔티티를 이 값으로 물들인다</label>
+					<select id="sig" data-testid="signal" bind:value={signal}>
+						<option value="">끔</option>
+						{#each signals as s (s)}
+							<option value={s}>sig.{s}</option>
+						{/each}
+					</select>
+					{#if signal}
+						<p class="form heat">차가움 0 → <b>뜨거움 1</b></p>
+					{/if}
+				</section>
+			{/if}
 
 			{#if warnings.length}
 				<section class="block warn">
@@ -451,6 +485,12 @@
 	}
 	.form.ok {
 		color: #8fb4ff;
+	}
+	.form.heat {
+		color: #7e94be;
+	}
+	.form.heat b {
+		color: #ffb042;
 	}
 	button {
 		background: #1a2338;

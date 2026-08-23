@@ -42,7 +42,7 @@ pnpm check:cores  # 코어 검증 (메타·파라미터 범위·순수성)
 |---|---|
 | 바람 속 군무 | `NoiseField@space + Boids@flock + Elastic@deform` |
 | 포식자 산개 | `Flee@flock[bird←hunter] + Boids@flock[bird] + Orbit@entity[hunter] + Elastic@deform[bird]` |
-| 사냥 | `Flee@flock[bird←hunter] + Boids@flock[bird] + Seek@entity[hunter←bird] + Elastic@deform[bird]` |
+| 사냥 | `Flee@flock[bird←hunter] + Panic@flock[bird] + Boids@flock[bird] + Seek@entity[hunter←bird] + Elastic@deform[bird]` |
 
 - **합성 = 코어 스택.** 패치 케이블 없이 채널 공유로 모듈레이션이 일어난다 —
   Bounce가 쓴 `vel`과 `sig.impact`를 Squash가 읽는다. 실행 순서는 레벨 순
@@ -51,7 +51,7 @@ pnpm check:cores  # 코어 검증 (메타·파라미터 범위·순수성)
   스타일 = 법칙 × 과장.
 - **결정론.** 고정 타임스텝 1/60 + 시드 고정 난수(mulberry32) → 같은 시드 = 같은 움직임.
 
-코어 13개. 레벨 4종(space·flock·entity·deform), 반복 4종(loop·steady·selfsim·event),
+코어 14개. 레벨 4종(space·flock·entity·deform), 반복 4종(loop·steady·selfsim·event),
 도메인 5종(physics·math·bio·chem·earth)이 **모두 열려 있다**.
 축이 다 열린 뒤의 깊이는 칸이 아니라 **장면**에서 온다 — 매트릭스는 지도이지 할당량이 아니다.
 
@@ -77,7 +77,7 @@ pnpm check:cores  # 코어 검증 (메타·파라미터 범위·순수성)
 ```
 src/lib/core/    types rand engine noise space      ← 순수 TS. DOM·Svelte import 금지
 src/lib/cores/   lissajous bounce squash boids elastic spring dla
-                 fractalZoom noiseField fourier orbit flee seek
+                 fractalZoom noiseField fourier orbit flee seek panic
 src/lib/cores/index.ts                          ← 레지스트리. 코어를 만들면 여기 등록
 src/lib/meta/    cores.json                     ← **생성물**. 손으로 고치지 않는다 (pnpm gen:meta)
 src/lib/         demos.ts  render.ts
@@ -147,6 +147,15 @@ overrides: { 'orbit@moon': { spin: 1 } }               // 조석 고정
 `@sveltejs/adapter-vercel` + `+layout.ts`의 `prerender = true` → 서버리스 함수 없이
 CDN에서 정적으로 나간다. `vercel.json`이 SvelteKit 프리셋을 고정한다.
 배포 후 `pnpm smoke`로 실제 URL에서 코어 스택·URL 파라미터·프레임레이트를 확인한다.
+
+## 신호 보기
+
+코어들은 `sig` 채널로 서로에게 신호를 보낸다 — `sig.impact`(접지 충격), `sig.stuck`(굳음),
+`sig.flee`(직접 본 위협), `sig.panic`(번진 겁). 뷰어의 **「신호 보기」**가 그 값(0~1)으로
+엔티티를 물들인다. 차가움 0 → 뜨거움 1.
+
+목록은 **코어의 `writes` 선언에서 나온다** — Lissajous를 열면 선택기가 없고,
+Bounce를 열면 `sig.impact`만 나온다. 소유 규칙을 위해 적어 둔 선언이 또 한 번 일한다.
 
 ## 공유
 
