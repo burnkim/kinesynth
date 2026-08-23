@@ -74,8 +74,19 @@ export const orbit: Core = {
 
 	params,
 
-	init(w: World, _p: Params, ctx: StepCtx) {
-		if (ctx.targets.length === 0) ctx.spawn({ closed: true });
+	init(w: World, p: Params, ctx: StepCtx) {
+		if (ctx.targets.length > 0) return;
+		// t=0의 궤도 위치에 바로 놓는다 — 첫 프레임에 (0,0)에 있으면 이걸 읽는 코어가 헛돈다
+		const R = 0.42 * Math.min(w.bounds.w, w.bounds.h);
+		const th = 2 * Math.PI * p.phase;
+		const a0 = ctx.anchor;
+		ctx.spawn({
+			pos: {
+				x: (a0 ? a0.pos.x : w.bounds.w / 2) + Math.cos(th) * p.radius * R,
+				y: (a0 ? a0.pos.y : w.bounds.h / 2) + Math.sin(th) * p.radius * R
+			},
+			closed: true
+		});
 	},
 
 	step(w: World, p: Params, _dt: number, ctx: StepCtx) {

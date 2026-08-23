@@ -228,3 +228,35 @@ test('orbit — 자전 + 공전 중첩 (한 코어를 세 번)', async ({ page }
 	}
 	await pair(page, shots, ['달 : 행성 = 3 : 1', '= 8 : 1'], `${SHOTS}/12-orbit.png`);
 });
+
+test('장면 · 바람 속 군무', async ({ page }) => {
+	await page.goto('/?demo=scene-murmuration&t=34');
+	await ready(page);
+	await expect(page.getByTestId('notation')).toHaveText(
+		'NoiseField(flow)@space + Boids(분리·정렬·응집)@flock + Elastic(vel→stretch)@deform ×exa1.8'
+	);
+	await expect(page.locator('.block.warn')).toHaveCount(0);
+	await page.locator('.stage').screenshot({ path: `${SHOTS}/13-scene-murmuration.png` });
+});
+
+test('장면 · 포식자 산개', async ({ page }) => {
+	await page.goto('/?demo=scene-hunt&t=17.4');
+	await ready(page);
+	// 무리와 포식자가 라우팅으로 갈려 있다 — Elastic이 [bird]에만 걸려 rot 충돌이 없다
+	await expect(page.getByTestId('notation')).toHaveText(
+		'Flee(거리→회피)@flock[bird←hunter] + Boids(분리·정렬·응집)@flock[bird] + ' +
+			'Orbit(spin:rev)@entity[hunter] + Elastic(vel→stretch)@deform[bird] ×exa1.8'
+	);
+	await expect(page.locator('.block.warn')).toHaveCount(0);
+
+	const shots: string[] = [];
+	for (const t of [15.6, 16.8, 17.4]) {
+		shots.push(await shot(page, `/?demo=scene-hunt&t=${t}`));
+	}
+	await strip(
+		page,
+		shots,
+		['15.6s — 무리가 휜다', '16.8s — 뚫고 들어온다', '17.4s — 한 갈래가 뜯긴다'],
+		`${SHOTS}/14-scene-hunt.png`
+	);
+});

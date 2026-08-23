@@ -20,6 +20,7 @@ import { fractalZoom } from './cores/fractalZoom';
 import { noiseField } from './cores/noiseField';
 import { fourier } from './cores/fourier';
 import { orbit } from './cores/orbit';
+import { flee } from './cores/flee';
 
 export interface Demo {
 	id: string;
@@ -33,6 +34,11 @@ export interface Demo {
 	trail: boolean;
 	/** 일부러 소유 규칙을 어긴 예시 — 경고가 어떻게 생기는지 보여 주려고 둔다 (강의 W4). */
 	conflict?: true;
+	/**
+	 * `demo` = 원리 하나를 보여 주는 최소 조합 (기본).
+	 * `scene` = 코어들이 합쳐져 **맥락이 읽히는** 장면. 무엇이 왜 그러는지가 그림에서 유추된다.
+	 */
+	kind?: 'scene';
 	/** 궤적 기록 길이(고정 스텝 수). 60 = 1초. */
 	trailLen: number;
 	seed: number;
@@ -158,6 +164,46 @@ export const demos: Demo[] = [
 		seed: 3
 	},
 	{
+		id: 'scene-murmuration',
+		title: '바람 속 군무',
+		kind: 'scene',
+		form: '흐름장이 무리를 휘고, 무리는 제 규칙으로 다시 모인다 — 겨울 저녁의 찌르레기',
+		patch: [noiseField, boids, elastic],
+		overrides: {
+			boids: { n: 380, radius: 96, sep: 2.1, ali: 1.35, coh: 1.5, speed: 138 },
+			noiseField: { force: 300, scale: 0.0025, turns: 1.3, drift: 0.07, oct: 3 },
+			elastic: { vmax: 120, kmax: 7 }
+		},
+		trail: true,
+		trailLen: 46,
+		seed: 5
+	},
+	{
+		id: 'scene-hunt',
+		title: '포식자 산개',
+		kind: 'scene',
+		form: '매가 지나간 자리에 구멍이 열리고, 지나가면 다시 메워진다',
+		// 무리와 포식자를 라우팅으로 갈라 건다. Elastic을 [bird]에만 거는 것도 필요해서다 —
+		// 전체에 걸면 Orbit(rot set)과 Elastic(rot set)이 포식자에서 부딪힌다.
+		patch: [
+			{ core: flee, target: 'bird', anchor: 'hunter' },
+			{ core: boids, target: 'bird' },
+			{ core: orbit, target: 'hunter' },
+			{ core: elastic, target: 'bird' }
+		],
+		overrides: {
+			boids: { n: 300, radius: 92, sep: 2.0, ali: 1.2, coh: 1.6, speed: 150 },
+			// 포식자는 새보다 빨라야 한다 — 느리면 무리가 궤도 전체를 비워 버려서
+			// '지나갔다 메워진다'가 아니라 '영역을 피한다'가 된다 (새 150px/s < 매 232px/s)
+			flee: { radius: 150, force: 1700, sharp: 2 },
+			orbit: { radius: 0.42, rev: 0.28, spin: 1, r: 26 },
+			elastic: { vmax: 130, kmax: 7 }
+		},
+		trail: true,
+		trailLen: 40,
+		seed: 11
+	},
+	{
 		id: 'dla-zoom',
 		title: 'DLA + Fractal Zoom',
 		form: '자기유사 — 한 옥타브 들어가도 가지의 모양이 같다',
@@ -173,3 +219,6 @@ export const demos: Demo[] = [
 ];
 
 export const demoById = (id: string): Demo => demos.find((d) => d.id === id) ?? demos[0];
+
+export const principles = demos.filter((d) => d.kind !== 'scene');
+export const scenes = demos.filter((d) => d.kind === 'scene');

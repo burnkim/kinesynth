@@ -8,7 +8,7 @@
 	import { browser } from '$app/environment';
 	import { createEngine, type Engine } from '$lib/core/engine';
 	import { toSeed } from '$lib/core/rand';
-	import { demos, demoById } from '$lib/demos';
+	import { demoById, demos, principles, scenes } from '$lib/demos';
 	import { drawWorld, fitCanvas } from '$lib/render';
 	import { groundY } from '$lib/cores/bounce';
 	import type { Core, Params } from '$lib/core/types';
@@ -250,9 +250,16 @@
 			<section class="block">
 				<label class="lbl" for="demo">데모</label>
 				<select id="demo" bind:value={demoId}>
-					{#each demos as d (d.id)}
-						<option value={d.id}>{d.title}</option>
-					{/each}
+					<optgroup label="원리 — 코어 하나가 보이는 최소 조합">
+						{#each principles as d (d.id)}
+							<option value={d.id}>{d.title}</option>
+						{/each}
+					</optgroup>
+					<optgroup label="장면 — 합쳐져 맥락이 읽히는 것">
+						{#each scenes as d (d.id)}
+							<option value={d.id}>{d.title}</option>
+						{/each}
+					</optgroup>
 				</select>
 				<p class="form">{demo.form}</p>
 			</section>

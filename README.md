@@ -36,6 +36,13 @@ pnpm check:cores  # 코어 검증 (메타·파라미터 범위·순수성)
 | Fourier Epicycles | `Fourier(N항)@entity` | math / entity / loop |
 | Orbit · 자전 + 공전 | `Orbit@entity[sun] + Orbit@entity[planet] + Orbit@entity[moon←planet]` | earth / entity / loop |
 
+**장면** — 코어들이 합쳐져 맥락이 읽히는 것. 뷰어 셀렉터에서 원리와 따로 묶여 있다.
+
+| 장면 | 스택 |
+|---|---|
+| 바람 속 군무 | `NoiseField@space + Boids@flock + Elastic@deform` |
+| 포식자 산개 | `Flee@flock[bird←hunter] + Boids@flock[bird] + Orbit@entity[hunter] + Elastic@deform[bird]` |
+
 - **합성 = 코어 스택.** 패치 케이블 없이 채널 공유로 모듈레이션이 일어난다 —
   Bounce가 쓴 `vel`과 `sig.impact`를 Squash가 읽는다. 실행 순서는 레벨 순
   `space → flock → entity → deform`.
@@ -43,8 +50,9 @@ pnpm check:cores  # 코어 검증 (메타·파라미터 범위·순수성)
   스타일 = 법칙 × 과장.
 - **결정론.** 고정 타임스텝 1/60 + 시드 고정 난수(mulberry32) → 같은 시드 = 같은 움직임.
 
-코어 11개. 레벨 4종(space·flock·entity·deform), 반복 4종(loop·steady·selfsim·event),
+코어 12개. 레벨 4종(space·flock·entity·deform), 반복 4종(loop·steady·selfsim·event),
 도메인 5종(physics·math·bio·chem·earth)이 **모두 열려 있다**.
+축이 다 열린 뒤의 깊이는 칸이 아니라 **장면**에서 온다 — 매트릭스는 지도이지 할당량이 아니다.
 
 ## URL로 상태 공유
 
@@ -68,7 +76,7 @@ pnpm check:cores  # 코어 검증 (메타·파라미터 범위·순수성)
 ```
 src/lib/core/    types  rand  engine  noise      ← 순수 TS. DOM·Svelte import 금지
 src/lib/cores/   lissajous bounce squash boids elastic spring dla
-                 fractalZoom noiseField fourier orbit
+                 fractalZoom noiseField fourier orbit flee
 src/lib/cores/index.ts                          ← 레지스트리. 코어를 만들면 여기 등록
 src/lib/meta/    cores.json                     ← **생성물**. 손으로 고치지 않는다 (pnpm gen:meta)
 src/lib/         demos.ts  render.ts

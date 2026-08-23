@@ -67,7 +67,7 @@ test('모든 프리셋이 소유 규칙을 지킨다', async ({ page }) => {
 		await page.locator('#demo').waitFor();
 		return page.locator('#demo option').evaluateAll((os) => os.map((o) => (o as HTMLOptionElement).value));
 	});
-	expect(ids.length).toBeGreaterThanOrEqual(9);
+	expect(ids.length).toBeGreaterThanOrEqual(13);
 	for (const id of ids) {
 		if (id === 'wind-bounce') continue; // 일부러 어긴 예시
 		await page.goto(`/?demo=${id}`);
@@ -144,4 +144,23 @@ test.describe('공유', () => {
 		await expect(page.getByTestId('p-orbit@moon-rev')).toHaveValue('0.4');
 		await expect(page.getByRole('button', { name: '▶ 재생' })).toBeVisible();
 	});
+});
+
+test('장면은 원리와 따로 묶여 있다', async ({ page }) => {
+	await page.goto('/');
+	await page.locator('#demo').waitFor();
+	const groups = await page
+		.locator('#demo optgroup')
+		.evaluateAll((os) => os.map((o) => (o as HTMLOptGroupElement).label));
+	expect(groups).toHaveLength(2);
+	expect(groups[0]).toContain('원리');
+	expect(groups[1]).toContain('장면');
+});
+
+test('포식자가 없으면 산개도 없다 — 앵커가 있어야 도피가 일어난다', async ({ page }) => {
+	// force 0 = 도피 끄기. 무리가 포식자를 그냥 통과한다.
+	await page.goto('/?demo=scene-hunt&t=17.4&p=flee.force:0');
+	await page.locator('canvas').waitFor();
+	await expect(page.getByTestId('p-flee-force')).toHaveValue('0');
+	await expect(page.locator('.block.warn')).toHaveCount(0);
 });
