@@ -17,6 +17,8 @@ import { elastic } from './cores/elastic';
 import { spring } from './cores/spring';
 import { dla } from './cores/dla';
 import { fractalZoom } from './cores/fractalZoom';
+import { noiseField } from './cores/noiseField';
+import { fourier } from './cores/fourier';
 
 export interface Demo {
 	id: string;
@@ -28,6 +30,8 @@ export interface Demo {
 	/** coreId → 이 프리셋에서만 바꿀 기본값 */
 	overrides?: Record<string, Params>;
 	trail: boolean;
+	/** 일부러 소유 규칙을 어긴 예시 — 경고가 어떻게 생기는지 보여 주려고 둔다 (강의 W4). */
+	conflict?: true;
 	/** 궤적 기록 길이(고정 스텝 수). 60 = 1초. */
 	trailLen: number;
 	seed: number;
@@ -89,6 +93,39 @@ export const demos: Demo[] = [
 		},
 		trail: false,
 		trailLen: 90,
+		seed: 1
+	},
+	{
+		id: 'noise-flock',
+		title: 'NoiseField + Boids',
+		form: '흐름장 위의 새떼 — 바람이 vel에 더해지고(add) 무리 규칙이 그 위에 얹힌다',
+		patch: [noiseField, boids, elastic],
+		overrides: {
+			boids: { n: 220, speed: 150, coh: 1.3, ali: 0.9 },
+			noiseField: { force: 380, scale: 0.003 },
+			elastic: { vmax: 130 }
+		},
+		trail: true,
+		trailLen: 34,
+		seed: 5
+	},
+	{
+		id: 'fourier',
+		title: 'Fourier Epicycles',
+		form: '선 — 원 위의 원이 그리는 글자. 항 수를 줄이면 모서리부터 뭉개진다',
+		patch: [fourier],
+		trail: true,
+		trailLen: 900,
+		seed: 1
+	},
+	{
+		id: 'wind-bounce',
+		title: '⚠ 충돌 예시 · NoiseField + Bounce',
+		form: 'Bounce가 vel을 set해서 흐름장이 더해 준 속도를 매 프레임 지운다 — 공이 바람에 안 밀린다',
+		patch: [noiseField, bounce],
+		conflict: true,
+		trail: true,
+		trailLen: 120,
 		seed: 1
 	},
 	{

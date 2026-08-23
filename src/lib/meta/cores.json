@@ -116,8 +116,8 @@
 				"vel"
 			],
 			"writes": [
-				"pos:set",
-				"vel:set"
+				"pos:add",
+				"vel:add"
 			],
 			"refs": [
 				"Craig Reynolds, Flocks, Herds, and Schools: A Distributed Behavioral Model, SIGGRAPH 1987",
@@ -245,6 +245,65 @@
 			"refs": [
 				"Mandelbrot, The Fractal Geometry of Nature, 1982 — 스케일 불변",
 				"Droste 효과 — 자기 안에 자기를 담는 재귀 이미지"
+			],
+			"status": "done",
+			"createdAt": "2026-08-23"
+		},
+		{
+			"id": "noiseField",
+			"name_ko": "흐름장",
+			"name_en": "Noise Field",
+			"domain": "math",
+			"level": "space",
+			"repeat": "steady",
+			"principle_ko": "공간마다 방향이 정해져 있고, 그 안에 든 것은 그 방향으로 밀린다.",
+			"rule": "a = fbm(x·scale, y·scale + t·drift)·turns·2π · vel += (cos a, sin a)·force·dt (add) · 펄린은 격자 난수를 부드럽게 이어 붙여 이웃끼리 방향이 비슷하다",
+			"params": [
+				"scale",
+				"force",
+				"turns",
+				"drift",
+				"oct"
+			],
+			"notation": "NoiseField(flow)@space",
+			"reads": [
+				"pos"
+			],
+			"writes": [
+				"vel:add"
+			],
+			"refs": [
+				"Ken Perlin, An Image Synthesizer, SIGGRAPH 1985",
+				"Bridson et al., Curl-Noise for Procedural Fluid Flow, SIGGRAPH 2007"
+			],
+			"status": "done",
+			"createdAt": "2026-08-23"
+		},
+		{
+			"id": "fourier",
+			"name_ko": "푸리에 에피사이클",
+			"name_en": "Fourier Epicycles",
+			"domain": "math",
+			"level": "entity",
+			"repeat": "loop",
+			"principle_ko": "원 위에 원을 매달아 돌리면 어떤 곡선이든 다시 그려진다.",
+			"rule": "z(t) = Σ c_k·e^(i2πkt), c_k = (1/N)Σ p_n·e^(−i2πkn/N) · 항을 크기 순으로 쌓고 부분합을 points로 그린다 · 항 수를 줄이면 높은 주파수가 빠져 모서리부터 뭉개진다",
+			"params": [
+				"preset",
+				"terms",
+				"speed",
+				"size"
+			],
+			"notation": "Fourier(N항)@entity",
+			"reads": [],
+			"writes": [
+				"pos:set",
+				"points:set",
+				"closed:set"
+			],
+			"refs": [
+				"Joseph Fourier, Théorie analytique de la chaleur, 1822",
+				"주전원(epicycle) — 프톨레마이오스의 행성 운동 모형, 2세기"
 			],
 			"status": "done",
 			"createdAt": "2026-08-23"

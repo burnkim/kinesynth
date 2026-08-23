@@ -184,3 +184,30 @@ test('bounce + squash + spring — 라우팅으로 갈라 건 팔로우스루', 
 		0.62
 	);
 });
+
+test('noise field — 바람이 vel에 더해진다 (write mode add)', async ({ page }) => {
+	await page.goto('/?demo=noise-flock&seed=5&trail=1&t=18');
+	await ready(page);
+	await expect(page.getByTestId('notation')).toHaveText(
+		'NoiseField(flow)@space + Boids(분리·정렬·응집)@flock + Elastic(vel→stretch)@deform ×exa1.8'
+	);
+	const shots: string[] = [];
+	for (const force of [0, 380]) {
+		shots.push(
+			await shot(page, `/?demo=noise-flock&seed=5&trail=1&t=18&p=noiseField.force:${force}`)
+		);
+	}
+	await pair(page, shots, ['바람 0 — 무리 규칙만', '바람 380 — 흐름이 얹힌다'], `${SHOTS}/10-noise-flock.png`);
+});
+
+test('fourier — 원 위의 원이 글자를 그린다', async ({ page }) => {
+	await page.goto('/?demo=fourier&seed=1&trail=1&t=14.3');
+	await ready(page);
+	await expect(page.getByTestId('notation')).toHaveText('Fourier(N항)@entity');
+	const shots: string[] = [];
+	for (const n of [3, 16]) {
+		shots.push(await shot(page, `/?demo=fourier&seed=1&trail=1&t=14.3&p=fourier.terms:${n}`));
+	}
+	// 항이 모자라면 높은 주파수가 빠져 모서리부터 뭉개진다
+	await pair(page, shots, ['N=3 — 뭉개짐', 'N=16 — 글자가 된다'], `${SHOTS}/11-fourier.png`);
+});

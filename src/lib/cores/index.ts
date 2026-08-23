@@ -17,6 +17,8 @@ import { elastic } from './elastic';
 import { spring } from './spring';
 import { dla } from './dla';
 import { fractalZoom } from './fractalZoom';
+import { noiseField } from './noiseField';
+import { fourier } from './fourier';
 
 export const cores: Core[] = [
 	lissajous,
@@ -26,9 +28,11 @@ export const cores: Core[] = [
 	elastic,
 	spring,
 	dla,
-	fractalZoom
+	fractalZoom,
+	noiseField,
+	fourier
 ];
 
 export const coreById = (id: string): Core | undefined => cores.find((c) => c.meta.id === id);
 
-export { lissajous, bounce, squash, boids, elastic, spring, dla, fractalZoom };
+export { lissajous, bounce, squash, boids, elastic, spring, dla, fractalZoom, noiseField, fourier };

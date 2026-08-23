@@ -67,10 +67,23 @@ test('모든 프리셋이 소유 규칙을 지킨다', async ({ page }) => {
 		await page.locator('#demo').waitFor();
 		return page.locator('#demo option').evaluateAll((os) => os.map((o) => (o as HTMLOptionElement).value));
 	});
-	expect(ids.length).toBeGreaterThanOrEqual(7);
+	expect(ids.length).toBeGreaterThanOrEqual(9);
 	for (const id of ids) {
+		if (id === 'wind-bounce') continue; // 일부러 어긴 예시
 		await page.goto(`/?demo=${id}`);
 		await page.locator('canvas').waitFor();
 		await expect(page.locator('.block.warn'), `프리셋 ${id}`).toHaveCount(0);
 	}
+});
+
+test('write mode — vel을 set하는 코어가 add를 지우면 경고한다', async ({ page }) => {
+	const warn: string[] = [];
+	page.on('console', (m) => m.type() === 'warning' && warn.push(m.text()));
+
+	await page.goto('/?demo=wind-bounce&seed=1');
+	await page.locator('canvas').waitFor();
+	await expect(page.locator('.block.warn')).toBeVisible();
+	await expect(page.locator('.block.warn')).toContainText('vel set');
+	await expect(page.locator('.block.warn')).toContainText('add를 지운다');
+	expect(warn.some((m) => m.includes('kinesynth'))).toBe(true);
 });

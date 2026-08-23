@@ -143,10 +143,13 @@
 
 ## v0.2 관문 3 — W3 코어 2종
 
-- [ ] core/noise.ts 유틸 (펄린 2D, 의존성 0)
-- [ ] NoiseField@space (steady): 흐름장 → vel에 add — write mode 첫 실전
-- [ ] Fourier@entity (loop): 에피사이클, 계수 프리셋, 트레일이 곡선을 그림
-- [ ] gen:meta 재실행 + 데모 프리셋 + 스크린샷
+- [x] `core/noise.ts` — 펄린 2D + fbm. 시드 고정 재현 확인, 이웃 표본 변화 0.029/0.01칸(매끄러움)
+- [x] `NoiseField@space` — vel에 **add**. Boids(add) 위에 얹으면 평균 속력 46→107, 정렬도 0.86→0.50.
+      Bounce·DLA(vel set)와 겹치면 엔진이 경고 — 그 장면을 `wind-bounce` 프리셋으로 남겼다(강의 W4용)
+- [x] `Fourier@entity` — 프리셋 도형을 256점 샘플링해 DFT, 항을 크기 순으로 쌓아 **부분합을 points로** 그린다.
+      화면의 선이 곧 에피사이클 팔, 그 끝(pos)이 트레일로 곡선을 그린다.
+      프리셋 3종(사각·별·**글자 K**) — 임의 지오메트리도 같은 규칙이라는 증거
+- [x] 코어 10건. 프리셋 `noise-flock` · `fourier` · `wind-bounce`. `shots/10·11`. 테스트 18/18
 
 ### 관문 1 로그
 
@@ -157,3 +160,22 @@
   바꾸니 대상 태그가 자동으로 붙고 캐시도 일관되게 유지된다 — 엔진의 후처리 태깅 로직이 통째로 사라졌다.
 - Spring의 월드 이동량을 `vel*dt`로 잡았는데 접지에서 위치가 튈 때 어긋난다.
   직전 머리 위치를 상태에 넣고 **위치 차이**로 바꿔 정확해졌다.
+
+### 관문 3 로그
+
+- `boids`가 vel을 `set`으로 선언해 놨는데 실제로는 조향력을 **더한다**. 흐름장을 얹자마자
+  가짜 경고가 떴다 — 선언이 사실과 어긋나면 감사기는 잡음이 된다. `add`로 고쳤다.
+  선언 기준을 정했다: **다른 코어의 기여가 살아남으면 add, 지워지면 set.**
+- 그 기준으로 보면 Bounce의 `vel set`은 맞는 선언이고, 흐름장과 겹칠 때 뜨는 경고도 참이다
+  (드리프트가 매 프레임 vel.x를 덮어쓴다). 그래서 그 조합을 지우지 않고 **충돌 예시 프리셋**으로 남겼다.
+
+## 커버리지 (코어 10)
+
+| | loop | steady | selfsim | event |
+|---|---|---|---|---|
+| **space** | – | NoiseField | FractalZoom | – |
+| **flock** | – | Boids | – | – |
+| **entity** | Lissajous · Fourier | – | DLA | Bounce |
+| **deform** | – | Elastic | – | Squash · Spring |
+
+레벨 4/4 · 반복 4/4 · 도메인 4/5 (earth 공백). 16칸 중 8칸.

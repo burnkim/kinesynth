@@ -71,9 +71,11 @@ export const boids: Core = {
 		status: 'done',
 		createdAt: '2026-08-23',
 		reads: ['pos', 'vel'],
+		// 조향력을 '더한다' — 앞선 코어가 실어 준 속도(예: 흐름장)가 살아남는다.
+		// 상한 클램프와 토러스 랩어라운드는 그 위의 경계 조건일 뿐 결정이 아니다.
 		writes: [
-			{ channel: 'pos', mode: 'set' },
-			{ channel: 'vel', mode: 'set' }
+			{ channel: 'pos', mode: 'add' },
+			{ channel: 'vel', mode: 'add' }
 		]
 	},
 

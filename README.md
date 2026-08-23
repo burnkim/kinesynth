@@ -31,6 +31,9 @@ pnpm check:cores  # 코어 검증 (메타·파라미터 범위·순수성)
 | Lissajous + Spring | `Lissajous(a:b, δ)@entity + Spring(chain)@deform ×exa` | math+physics / entity+deform / event |
 | DLA · 결정 성장 | `DLA(격자 성장)@entity` | chem / entity / selfsim |
 | DLA + Fractal Zoom | `FractalZoom(base, rate)@space + DLA(격자 성장)@entity` | math+chem / space+entity / selfsim |
+| Bounce + Squash + Spring | `Bounce@entity[ball] + Squash@deform[ball] + Spring@deform[tail←ball]` | physics / entity+deform / event |
+| NoiseField + Boids | `NoiseField(flow)@space + Boids@flock + Elastic@deform` | math+bio / space+flock+deform / steady |
+| Fourier Epicycles | `Fourier(N항)@entity` | math / entity / loop |
 
 - **합성 = 코어 스택.** 패치 케이블 없이 채널 공유로 모듈레이션이 일어난다 —
   Bounce가 쓴 `vel`과 `sig.impact`를 Squash가 읽는다. 실행 순서는 레벨 순
@@ -39,7 +42,7 @@ pnpm check:cores  # 코어 검증 (메타·파라미터 범위·순수성)
   스타일 = 법칙 × 과장.
 - **결정론.** 고정 타임스텝 1/60 + 시드 고정 난수(mulberry32) → 같은 시드 = 같은 움직임.
 
-레벨 4종(space·flock·entity·deform)과 반복 4종(loop·steady·selfsim·event)이 모두 열려 있다.
+코어 10개. 레벨 4종(space·flock·entity·deform)과 반복 4종(loop·steady·selfsim·event)이 모두 열려 있다.
 도메인은 physics·math·bio·chem 4종 — earth만 비어 있다.
 
 ## URL로 상태 공유
@@ -62,8 +65,8 @@ pnpm check:cores  # 코어 검증 (메타·파라미터 범위·순수성)
 ## 구조
 
 ```
-src/lib/core/    types.ts  rand.ts  engine.ts   ← 순수 TS. DOM·Svelte import 금지
-src/lib/cores/   lissajous  bounce  squash  boids  elastic  spring  dla  fractalZoom
+src/lib/core/    types  rand  engine  noise      ← 순수 TS. DOM·Svelte import 금지
+src/lib/cores/   lissajous bounce squash boids elastic spring dla fractalZoom noiseField fourier
 src/lib/cores/index.ts                          ← 레지스트리. 코어를 만들면 여기 등록
 src/lib/meta/    cores.json                     ← **생성물**. 손으로 고치지 않는다 (pnpm gen:meta)
 src/lib/         demos.ts  render.ts
@@ -92,6 +95,10 @@ patch: [
 
 수치 채널은 write mode로 합성한다: **set 하나 + add 여럿**. `scale`은 엔진이 매 스텝 (1,1)로
 되돌리므로 deform 코어들이 `mul`로 겹쳐 쌓인다. 대상을 안 적으면 `'*'`(전체)라서 기존 프리셋은 그대로 돈다.
+
+선언 기준은 **다른 코어의 기여가 살아남는가**다 — 살아남으면 `add`, 지워지면 `set`.
+그래서 `NoiseField`(vel add)는 `Boids`(vel add) 위에 얹히지만 `Bounce`(vel set)와 겹치면 경고가 뜬다.
+그 장면을 `⚠ 충돌 예시` 프리셋으로 남겨 뒀다 — 경고가 어떻게 생기는지 눌러 볼 수 있다.
 
 ## 새 코어 추가하기
 
