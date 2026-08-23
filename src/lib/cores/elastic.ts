@@ -28,11 +28,19 @@ export const elastic: Core = {
 	meta: {
 		id: 'elastic',
 		name: 'Elastic',
+		nameKo: '진행 방향 신장',
 		domain: 'physics',
 		level: 'deform',
 		repeat: 'steady',
 		principle: '빠를수록 진행 방향으로 늘어난다 — 속도가 형태가 된다.',
 		notation: 'Elastic(vel→stretch)@deform',
+		rule: 'rot = atan2(vel) · scale.x = 1 + kmax·exa·(|v|/vmax)² (관성·항력이 v²에 비례) · scale.y = 1/scale.x (부피 보존) · 아주 짧은 2점 선분에 걸면 정지=점, 가속=선',
+		refs: [
+			'Thomas & Johnston, The Illusion of Life, 1981 — Squash and Stretch / Exaggeration',
+			'사진의 모션 블러: 노출 시간 × 속도 = 스트리크 길이'
+		],
+		status: 'done',
+		createdAt: '2026-08-23',
 		reads: ['vel'],
 		writes: [
 			{ channel: 'rot', mode: 'set' },

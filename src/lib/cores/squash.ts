@@ -32,11 +32,19 @@ export const squash: Core = {
 	meta: {
 		id: 'squash',
 		name: 'Squash & Stretch',
+		nameKo: '찌그러짐과 늘어남',
 		domain: 'physics',
 		level: 'deform',
 		repeat: 'event',
 		principle: '빠르면 늘어나고 부딪히면 납작해진다 — 부피는 그대로.',
 		notation: 'Squash(vel.y→scale)@deform',
+		rule: 'scale.y = 1 + K_s·exa·|vel.y|/vmax − K_q·exa·impact/vmax · scale.x = 1/scale.y (부피 보존) · exa 1.0 = 물리적 사실',
+		refs: [
+			'Thomas & Johnston, The Illusion of Life, 1981 — 12원칙 #1 Squash and Stretch',
+			'탄성체의 근사 비압축성 (Poisson ratio → 0.5)'
+		],
+		status: 'done',
+		createdAt: '2026-08-23',
 		reads: ['vel.y', 'sig.impact'],
 		writes: [{ channel: 'scale', mode: 'mul' }]
 	},

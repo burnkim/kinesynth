@@ -56,11 +56,19 @@ export const spring: Core = {
 	meta: {
 		id: 'spring',
 		name: 'Spring Chain',
+		nameKo: '스프링 체인 · 팔로우스루',
 		domain: 'physics',
 		level: 'deform',
 		repeat: 'event',
 		principle: '몸이 멈춰도 꼬리는 계속 간다 — 지나쳤다가 되돌아온다.',
 		notation: 'Spring(chain)@deform',
+		rule: '마디 i는 마디 i−1에서 len 떨어진 자리를 목표로 하는 스프링-감쇠계 · ω=2π·freq, ζ=min(damp/exa, 1) · 마디 길이는 [0.55, 1.5]×len으로 제한(채찍이 끊기거나 겹치지 않게) · exa 0 → ζ 1, 지나침 없음 = 팔로우스루 없음',
+		refs: [
+			'Thomas & Johnston, The Illusion of Life, 1981 — 12원칙 #5 Follow Through and Overlapping Action',
+			'감쇠 조화 진동자의 오버슈트 = exp(−πζ/√(1−ζ²))'
+		],
+		status: 'done',
+		createdAt: '2026-08-23',
 		reads: ['pos'],
 		writes: [
 			{ channel: 'points', mode: 'set' },

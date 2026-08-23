@@ -42,11 +42,19 @@ export const dla: Core = {
 	meta: {
 		id: 'dla',
 		name: 'DLA',
+		nameKo: '결정 성장 (확산 제한 응집)',
 		domain: 'chem',
 		level: 'entity',
 		repeat: 'selfsim',
 		principle: '떠돌던 것이 닿는 자리에 붙는다 — 바깥이 안을 가려서, 채워지지 않고 가지가 된다.',
 		notation: 'DLA(격자 성장)@entity',
+		rule: '무작위 걸음 + 약한 중심 끌림 · 점유 격자의 8이웃 중 하나라도 차 있으면 고착(sig.stuck=1, vel=0) · 멀리 나간 보행자는 결정 가장자리로 재생성 · 격자는 스텝마다 고착 입자로 재구성(O(n)) · 프랙탈 차원 D≈1.71',
+		refs: [
+			'Witten & Sander, Diffusion-Limited Aggregation, a Kinetic Critical Phenomenon, PRL 1981',
+			'전기 방전(리히텐베르크 도형)·금속 수지상 결정·광물 침착이 같은 규칙'
+		],
+		status: 'done',
+		createdAt: '2026-08-23',
 		reads: [],
 		writes: [
 			{ channel: 'pos', mode: 'set' },

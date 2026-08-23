@@ -57,11 +57,19 @@ export const boids: Core = {
 	meta: {
 		id: 'boids',
 		name: 'Boids',
+		nameKo: '새떼',
 		domain: 'bio',
 		level: 'flock',
 		repeat: 'steady',
 		principle: '아무도 지휘하지 않는데 무리가 된다 — 옆을 보는 세 가지 규칙만으로.',
 		notation: 'Boids(분리·정렬·응집)@flock',
+		rule: '이웃 반경 안에서 분리(−Σd/|d|²)·정렬(Σv)·응집(Σd) 세 방향을 가중 합 → 목표 방향 · 목표속도 = 방향×최고속도 · a = (목표속도 − v)·응답 · 속도 상한만, 하한 없음 · 공간은 토러스',
+		refs: [
+			'Craig Reynolds, Flocks, Herds, and Schools: A Distributed Behavioral Model, SIGGRAPH 1987',
+			'Ballerini et al., Interaction ruling animal collective behaviour, PNAS 2008 — 거리보다 위상적 이웃'
+		],
+		status: 'done',
+		createdAt: '2026-08-23',
 		reads: ['pos', 'vel'],
 		writes: [
 			{ channel: 'pos', mode: 'set' },

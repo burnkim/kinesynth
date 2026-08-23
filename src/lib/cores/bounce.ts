@@ -46,11 +46,19 @@ export const bounce: Core = {
 	meta: {
 		id: 'bounce',
 		name: 'Bounce',
+		nameKo: '튕김',
 		domain: 'physics',
 		level: 'entity',
 		repeat: 'event',
 		principle: '떨어진 만큼 튀어오르되, 부딪칠 때마다 조금씩 잃는다.',
 		notation: 'Bounce(g, e)@entity',
+		rule: 'v += g·dt · 접지 시 v ← −e·v (반발계수 e) · 튕김 높이는 매 충돌마다 e²배 · 충격량 Δv=(1+e)|v|를 sig.impact로 방출',
+		refs: [
+			"Newton's experimental law of restitution, 1687",
+			'Thomas & Johnston, The Illusion of Life — Timing'
+		],
+		status: 'done',
+		createdAt: '2026-08-23',
 		reads: [],
 		writes: [
 			{ channel: 'pos', mode: 'set' },

@@ -4,16 +4,19 @@
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
-		"dev": "vite dev",
-		"build": "vite build",
+		"dev": "pnpm gen:meta && vite dev",
+		"build": "pnpm gen:meta && vite build",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"test:e2e": "playwright test tests/shots.e2e.ts tests/viewer.e2e.ts",
-		"test": "pnpm run check && pnpm run test:e2e",
+		"test": "pnpm run check && pnpm run check:cores && pnpm run check:meta && pnpm run test:e2e",
 		"shots": "playwright test tests/shots.e2e.ts",
-		"smoke": "LIVE_URL=${LIVE_URL:-https://kinesynth.vercel.app} playwright test tests/live.e2e.ts"
+		"smoke": "LIVE_URL=${LIVE_URL:-https://kinesynth.vercel.app} playwright test tests/live.e2e.ts",
+		"gen:meta": "node scripts/gen-meta.mjs",
+		"check:meta": "node scripts/gen-meta.mjs --check",
+		"check:cores": "node scripts/check-cores.mjs"
 	},
 	"devDependencies": {
 		"@playwright/test": "^1.60.0",

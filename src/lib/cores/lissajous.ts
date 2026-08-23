@@ -30,11 +30,19 @@ export const lissajous: Core = {
 	meta: {
 		id: 'lissajous',
 		name: 'Lissajous',
+		nameKo: '리사주',
 		domain: 'math',
 		level: 'entity',
 		repeat: 'loop',
 		principle: '수직인 두 흔들림을 겹치면 하나의 닫힌 궤도가 그려진다.',
 		notation: 'Lissajous(a:b, δ)@entity',
+		rule: 'pos = (A·sin(a·θ+δ), B·sin(b·θ)), θ = 2π·speed·t · vel은 해석적 미분 · a:b가 정수비면 완전 루프',
+		refs: [
+			'Jules Antoine Lissajous, 1857 — 소리굽쇠 진동의 광학적 합성',
+			'Nathaniel Bowditch, 1815 — 보디치 곡선'
+		],
+		status: 'done',
+		createdAt: '2026-08-23',
 		reads: [],
 		writes: [
 			{ channel: 'pos', mode: 'set' },

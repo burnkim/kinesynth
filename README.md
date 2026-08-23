@@ -17,6 +17,8 @@ pnpm check        # 타입 검사
 pnpm test:e2e     # Playwright (스크린샷 + 동작 검증)
 pnpm shots        # 스크린샷만 → shots/
 pnpm smoke        # 배포된 사이트 스모크 테스트
+pnpm gen:meta     # 코어 → src/lib/meta/cores.json 생성
+pnpm check:cores  # 코어 검증 (메타·파라미터 범위·순수성)
 ```
 
 ## v0.1에 있는 것
@@ -62,7 +64,8 @@ pnpm smoke        # 배포된 사이트 스모크 테스트
 ```
 src/lib/core/    types.ts  rand.ts  engine.ts   ← 순수 TS. DOM·Svelte import 금지
 src/lib/cores/   lissajous  bounce  squash  boids  elastic  spring  dla  fractalZoom
-src/lib/meta/    cores.json                     ← 코어 아카이브 (PRD §11 스키마)
+src/lib/cores/index.ts                          ← 레지스트리. 코어를 만들면 여기 등록
+src/lib/meta/    cores.json                     ← **생성물**. 손으로 고치지 않는다 (pnpm gen:meta)
 src/lib/         demos.ts  render.ts
 src/routes/      +page.svelte                   ← 뷰어
 tests/           shots.e2e.ts  viewer.e2e.ts
@@ -72,11 +75,31 @@ shots/           스크린샷 기록
 **코어 파일 = 강의 자료.** 파일당 ~100줄, 상단 주석에 원리 한 줄 + 표기법.
 `core/`·`cores/`는 외부 런타임 의존성 0 — 추후 독립 패키지로 뽑을 수 있게.
 
+## 합성 — 코어를 어디에 걸 것인가
+
+`points`(지오메트리)는 **단독 소유** 채널이다. 한 엔티티의 모양을 매 스텝 고쳐 쓰는 코어는 하나뿐이어야 한다.
+겹치면 엔진이 경고하고, 답은 **대상을 갈라 거는 것**이다.
+
+```ts
+patch: [
+  { core: bounce, target: 'ball' },              // 몸: 12각 폐곡선
+  { core: squash, target: 'ball' },              // 몸을 찌그러뜨린다
+  { core: spring, target: 'tail', anchor: 'ball' } // 꼬리: 뿌리를 몸에 건다
+]
+```
+
+→ `Bounce(g, e)@entity[ball] + Squash(vel.y→scale)@deform[ball]×exa1.8 + Spring(chain)@deform[tail←ball]×exa1.8`
+
+수치 채널은 write mode로 합성한다: **set 하나 + add 여럿**. `scale`은 엔진이 매 스텝 (1,1)로
+되돌리므로 deform 코어들이 `mul`로 겹쳐 쌓인다. 대상을 안 적으면 `'*'`(전체)라서 기존 프리셋은 그대로 돈다.
+
 ## 새 코어 추가하기
 
-1. `src/lib/cores/<id>.ts` — 상단 주석에 **원리 한 줄 + 표기법**, `meta`(domain/level/repeat/writes) + `params`(ParamDef) + `step`.
-2. `src/lib/demos.ts`에 프리셋 등록. 표기법 문자열은 엔진이 만든다.
-3. `src/lib/meta/cores.json`에 메타 추가 (rule·refs·status).
+1. `src/lib/cores/<id>.ts` — 상단 주석에 **원리 한 줄 + 표기법**, `meta` + `params`(ParamDef) + `step`.
+   코어는 `w.entities`가 아니라 **`ctx.targets`**를 순회하고, 엔티티는 `ctx.spawn()`으로 만든다.
+2. `src/lib/cores/index.ts` 레지스트리에 등록.
+3. `src/lib/demos.ts`에 프리셋 등록. 표기법 문자열은 엔진이 만든다.
+4. `pnpm check:cores`로 게이트 통과 확인 → `pnpm gen:meta`로 아카이브 갱신 (dev/build가 자동으로 돌린다).
 
 ## 배포
 

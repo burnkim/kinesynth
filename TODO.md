@@ -134,9 +134,12 @@
 
 ## v0.2 관문 2 — 메타 단일 소스
 
-- [ ] cores/index.ts 레지스트리 → cores.json 자동 생성 (pnpm gen:meta), dev/build 훅
-- [ ] cores.json 수기 편집 금지 (생성물 주석 표기)
-- [ ] 코어 검증 스크립트: 필수 메타·repeat 선언·파라미터 범위·순수성 — W4 학생 기여 게이트
+- [x] `cores/index.ts` 레지스트리 + `scripts/gen-meta.mjs`. `pnpm dev`·`pnpm build`가 먼저 돌린다.
+      CoreMeta를 넓혀(nameKo·rule·refs·status·createdAt) json이 담던 걸 전부 코어 파일이 갖게 했다
+- [x] json 첫 필드가 `$generated`. `pnpm check:meta`가 어긋나면 실패 — `pnpm test`에 물려 있다
+- [x] `pnpm check:cores`. 필수 메타·level/repeat/domain 허용값·id 중복·notation에 @level·refs 유무·
+      파라미터 범위(min<max, 기본값 범위 안, step>0)·deform의 exa 필수·순수성(DOM/Svelte)·
+      **선언되지 않은 points 쓰기**까지 본다. 일부러 4종 위반을 심어 전부 잡히는 걸 확인
 
 ## v0.2 관문 3 — W3 코어 2종
 

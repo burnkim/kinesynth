@@ -27,11 +27,19 @@ export const fractalZoom: Core = {
 	meta: {
 		id: 'fractalZoom',
 		name: 'Fractal Zoom',
+		nameKo: '프랙탈 줌',
 		domain: 'math',
 		level: 'space',
 		repeat: 'selfsim',
 		principle: '한 배율만큼 들어가면 처음과 같은 그림이 나온다 — 반복하는 것은 시간이 아니라 크기다.',
 		notation: 'FractalZoom(base, rate)@space',
+		rule: 'zoom = base^frac(t·rate) — 한 옥타브를 지나면 1로 되돌아온다 · rot = 위상×spin×2π · 카메라 위치는 (fx, fy)×bounds · 세계를 바꾸지 않고 보는 방식만 바꾼다',
+		refs: [
+			'Mandelbrot, The Fractal Geometry of Nature, 1982 — 스케일 불변',
+			'Droste 효과 — 자기 안에 자기를 담는 재귀 이미지'
+		],
+		status: 'done',
+		createdAt: '2026-08-23',
 		reads: [],
 		writes: [
 			{ channel: 'camera.zoom', mode: 'set' },

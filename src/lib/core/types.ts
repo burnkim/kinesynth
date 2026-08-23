@@ -85,14 +85,25 @@ export interface ChannelWrite {
  * 소유는 '매 스텝 쓰는가'로 가른다.
  */
 
+export type Status = 'idea' | 'draft' | 'done';
+
+/**
+ * 코어의 아카이브 레코드 (PRD §11). **이게 단일 소스다** —
+ * `src/lib/meta/cores.json`은 여기서 생성된다 (`pnpm gen:meta`). json을 손으로 고치지 않는다.
+ */
 export interface CoreMeta {
 	id: string;
-	name: string;
+	name: string; // 영문
+	nameKo: string;
 	domain: Domain;
 	level: Level;
 	repeat: Repeat;
 	principle: string; // 비전공자도 이해하는 한 줄
+	rule: string; // 수식·규칙 요약
 	notation: string; // 표기법 조각 — 예: 'Squash(vel.y→scale)@deform'
+	refs: string[]; // 출처
+	status: Status;
+	createdAt: string; // YYYY-MM-DD
 	reads?: string[]; // 읽는 채널
 	writes: ChannelWrite[]; // 쓰는 채널 + 모드
 	/** 앵커를 받는 코어면 그 뜻을 한 줄로. 없으면 앵커를 쓰지 않는 코어. */
