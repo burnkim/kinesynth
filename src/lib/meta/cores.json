@@ -118,6 +118,78 @@
 			],
 			"status": "done",
 			"createdAt": "2026-08-23"
+		},
+		{
+			"id": "spring",
+			"name_ko": "스프링 체인 · 팔로우스루",
+			"name_en": "Spring Chain",
+			"domain": "physics",
+			"level": "deform",
+			"repeat": "event",
+			"principle_ko": "몸이 멈춰도 꼬리는 계속 간다 — 지나쳤다가 되돌아온다.",
+			"rule": "마디 i는 마디 i−1에서 len 떨어진 자리를 목표로 하는 스프링-감쇠계 · ω=2π·freq, ζ=min(damp/exa, 1) · 마디 길이는 [0.55, 1.5]×len으로 제한(채찍이 끊기거나 겹치지 않게) · exa 0 → ζ 1, 지나침 없음 = 팔로우스루 없음",
+			"params": [
+				"n",
+				"len",
+				"freq",
+				"damp",
+				"exa"
+			],
+			"notation": "Spring(chain)@deform",
+			"refs": [
+				"Thomas & Johnston, The Illusion of Life, 1981 — 12원칙 #5 Follow Through and Overlapping Action",
+				"감쇠 조화 진동자의 오버슈트 = exp(−πζ/√(1−ζ²))"
+			],
+			"status": "done",
+			"createdAt": "2026-08-23"
+		},
+		{
+			"id": "dla",
+			"name_ko": "결정 성장 (확산 제한 응집)",
+			"name_en": "DLA",
+			"domain": "chem",
+			"level": "entity",
+			"repeat": "selfsim",
+			"principle_ko": "떠돌던 것이 닿는 자리에 붙는다 — 바깥이 안을 가려서, 채워지지 않고 가지가 된다.",
+			"rule": "무작위 걸음 + 약한 중심 끌림 · 점유 격자의 8이웃 중 하나라도 차 있으면 고착(sig.stuck=1, vel=0) · 멀리 나간 보행자는 결정 가장자리로 재생성 · 격자는 스텝마다 고착 입자로 재구성(O(n)) · 프랙탈 차원 D≈1.71",
+			"params": [
+				"n",
+				"walkers",
+				"cell",
+				"step",
+				"bias"
+			],
+			"refs": [
+				"Witten & Sander, Diffusion-Limited Aggregation, a Kinetic Critical Phenomenon, PRL 1981",
+				"전기 방전(리히텐베르크 도형)·금속 수지상 결정·광물 침착이 같은 규칙"
+			],
+			"notation": "DLA(격자 성장)@entity",
+			"status": "done",
+			"createdAt": "2026-08-23"
+		},
+		{
+			"id": "fractalZoom",
+			"name_ko": "프랙탈 줌",
+			"name_en": "Fractal Zoom",
+			"domain": "math",
+			"level": "space",
+			"repeat": "selfsim",
+			"principle_ko": "한 배율만큼 들어가면 처음과 같은 그림이 나온다 — 반복하는 것은 시간이 아니라 크기다.",
+			"rule": "zoom = base^frac(t·rate) — 한 옥타브를 지나면 1로 되돌아온다 · rot = 위상×spin×2π · 카메라 위치는 (fx, fy)×bounds · 세계를 바꾸지 않고 보는 방식만 바꾼다",
+			"params": [
+				"base",
+				"rate",
+				"spin",
+				"fx",
+				"fy"
+			],
+			"notation": "FractalZoom(base, rate)@space",
+			"refs": [
+				"Mandelbrot, The Fractal Geometry of Nature, 1982 — 스케일 불변",
+				"Droste 효과 — 자기 안에 자기를 담는 재귀 이미지"
+			],
+			"status": "done",
+			"createdAt": "2026-08-23"
 		}
 	]
 }

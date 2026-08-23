@@ -1,4 +1,4 @@
-import adapter from '@sveltejs/adapter-auto';
+import adapter from '@sveltejs/adapter-vercel';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 
@@ -11,10 +11,9 @@ export default defineConfig({
 					filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 			},
 
-			// adapter-auto only supports some environments, see https://svelte.dev/docs/kit/adapter-auto for a list.
-			// If your environment is not supported, or you settled on a specific environment, switch out the adapter.
-			// See https://svelte.dev/docs/kit/adapters for more information about adapters.
-			adapter: adapter()
+			// Vercel 배포. +layout.ts의 prerender=true 때문에 서버리스 함수 없이 정적으로 나간다.
+			// runtime은 명시해 둔다 — 로컬 Node 버전이 어댑터가 아는 목록 밖이어도 빌드가 통과하도록.
+			adapter: adapter({ runtime: 'nodejs22.x' })
 		})
 	]
 });

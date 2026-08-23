@@ -25,7 +25,13 @@ export const DT = 1 / 60;
 const MAX_STEPS_PER_FRAME = 5; // 탭 복귀 등 큰 delta에서 스파이럴 방지
 
 export function createWorld(seed: number, bounds: Bounds): World {
-	return { entities: [], t: 0, bounds, rand: mulberry32(seed) };
+	return {
+		entities: [],
+		t: 0,
+		bounds,
+		camera: { x: bounds.w / 2, y: bounds.h / 2, zoom: 1, rot: 0 },
+		rand: mulberry32(seed)
+	};
 }
 
 /** 엔티티 기본값 — 점 하나짜리 엔티티가 곧 점이다. */
@@ -130,6 +136,9 @@ export function createEngine(cores: Core[], opts: { seed: number; bounds: Bounds
 		setBounds(b: Bounds) {
 			bounds = { ...b };
 			world.bounds = bounds;
+			// space 코어가 없으면 카메라는 화면 중심에 머문다 (변환 없음).
+			world.camera.x = bounds.w / 2;
+			world.camera.y = bounds.h / 2;
 		},
 		advance(realDt: number): number {
 			acc += Math.min(realDt, MAX_STEPS_PER_FRAME * DT);

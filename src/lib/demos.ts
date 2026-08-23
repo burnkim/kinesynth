@@ -13,6 +13,9 @@ import { bounce } from './cores/bounce';
 import { squash } from './cores/squash';
 import { boids } from './cores/boids';
 import { elastic } from './cores/elastic';
+import { spring } from './cores/spring';
+import { dla } from './cores/dla';
+import { fractalZoom } from './cores/fractalZoom';
 
 export interface Demo {
 	id: string;
@@ -55,6 +58,39 @@ export const demos: Demo[] = [
 		trail: false,
 		trailLen: 24,
 		seed: 7
+	},
+	{
+		id: 'lissajous-spring',
+		title: 'Lissajous + Spring',
+		form: '선 — 꼬리가 몸의 궤적을 벗어났다가 돌아온다. exa 0이면 궤적을 그대로 따라간다',
+		cores: [lissajous, spring],
+		// 트레일이 몸이 지나간 길이고, 꼬리가 거기서 얼마나 벗어나는지가 팔로우스루다.
+		overrides: { lissajous: { speed: 0.09 } },
+		trail: true,
+		trailLen: 100,
+		seed: 1
+	},
+	{
+		id: 'dla',
+		title: 'DLA · 결정 성장',
+		form: '점이 붙어 면이 되는 과정 — 채워지지 않고 가지가 된다',
+		cores: [dla],
+		trail: false,
+		trailLen: 30,
+		seed: 3
+	},
+	{
+		id: 'dla-zoom',
+		title: 'DLA + Fractal Zoom',
+		form: '자기유사 — 한 옥타브 들어가도 가지의 모양이 같다',
+		cores: [dla, fractalZoom],
+		overrides: {
+			dla: { cell: 4, n: 1100, walkers: 110 },
+			fractalZoom: { rate: 0.09, base: 2, fx: 0.5, fy: 0.5 }
+		},
+		trail: false,
+		trailLen: 30,
+		seed: 3
 	}
 ];
 

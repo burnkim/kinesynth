@@ -22,6 +22,57 @@ async function ready(page: Page) {
 	);
 }
 
+/** 두 장을 브라우저 캔버스에서 나란히 합성 — 외부 이미지 라이브러리 없이. */
+async function pair(
+	page: Page,
+	shots: string[],
+	labels: [string, string],
+	out: string
+): Promise<void> {
+	const composed = await page.evaluate(
+		async ([a, b, la, lb]) => {
+			const load = (src: string) =>
+				new Promise<HTMLImageElement>((res) => {
+					const img = new Image();
+					img.onload = () => res(img);
+					img.src = src;
+				});
+			const [ia, ib] = await Promise.all([load(a), load(b)]);
+			const gap = 16;
+			const bar = 56;
+			const cv = document.createElement('canvas');
+			cv.width = ia.width + ib.width + gap;
+			cv.height = Math.max(ia.height, ib.height) + bar;
+			const ctx = cv.getContext('2d')!;
+			ctx.fillStyle = '#0a0c11';
+			ctx.fillRect(0, 0, cv.width, cv.height);
+			ctx.drawImage(ia, 0, bar);
+			ctx.drawImage(ib, ia.width + gap, bar);
+			ctx.font = '600 30px system-ui, sans-serif';
+			ctx.fillStyle = '#dce7ff';
+			ctx.fillText(la, 24, 38);
+			ctx.fillStyle = '#ffb44d';
+			ctx.fillText(lb, ia.width + gap + 24, 38);
+			ctx.strokeStyle = '#1e2942';
+			ctx.beginPath();
+			ctx.moveTo(ia.width + gap / 2, bar);
+			ctx.lineTo(ia.width + gap / 2, cv.height);
+			ctx.stroke();
+			return cv.toDataURL('image/png');
+		},
+		[shots[0], shots[1], labels[0], labels[1]]
+	);
+	writeFileSync(out, Buffer.from(composed.split(',')[1], 'base64'));
+}
+
+/** stage 스크린샷을 data URL로. */
+async function shot(page: Page, url: string): Promise<string> {
+	await page.goto(url);
+	await ready(page);
+	const buf = await page.locator('.stage').screenshot();
+	return `data:image/png;base64,${buf.toString('base64')}`;
+}
+
 test('lissajous — 점이 트레일로 선이 된다', async ({ page }) => {
 	// t=7 → 한 바퀴(6.25s)를 다 감은 상태. 궤적은 엔진이 기록하므로 seek에서도 남는다.
 	await page.goto('/?demo=lissajous&trail=1&seed=1&t=7');
@@ -45,47 +96,10 @@ test('bounce + squash — 코어 스택 합성', async ({ page }) => {
 
 test('exa 1.0 vs 2.5 — 사실에서 만화로', async ({ page }) => {
 	const shots: string[] = [];
-
 	for (const exa of [1.0, 2.5]) {
-		await page.goto(`/?demo=bounce-squash&seed=1&t=${T_IMPACT}&p=squash.exa:${exa}`);
-		await ready(page);
-		const buf = await page.locator('.stage').screenshot();
-		shots.push(`data:image/png;base64,${buf.toString('base64')}`);
+		shots.push(await shot(page, `/?demo=bounce-squash&seed=1&t=${T_IMPACT}&p=squash.exa:${exa}`));
 	}
-
-	// 두 장을 브라우저 캔버스에서 나란히 합성 — 외부 이미지 라이브러리 없이.
-	const composed = await page.evaluate(async ([a, b]) => {
-		const load = (src: string) =>
-			new Promise<HTMLImageElement>((res) => {
-				const img = new Image();
-				img.onload = () => res(img);
-				img.src = src;
-			});
-		const [ia, ib] = await Promise.all([load(a), load(b)]);
-		const gap = 16;
-		const bar = 56;
-		const cv = document.createElement('canvas');
-		cv.width = ia.width + ib.width + gap;
-		cv.height = Math.max(ia.height, ib.height) + bar;
-		const ctx = cv.getContext('2d')!;
-		ctx.fillStyle = '#0a0c11';
-		ctx.fillRect(0, 0, cv.width, cv.height);
-		ctx.drawImage(ia, 0, bar);
-		ctx.drawImage(ib, ia.width + gap, bar);
-		ctx.fillStyle = '#dce7ff';
-		ctx.font = '600 30px system-ui, sans-serif';
-		ctx.fillText('exa 1.0 — 물리적 사실', 24, 38);
-		ctx.fillStyle = '#ffb44d';
-		ctx.fillText('exa 2.5 — 만화', ia.width + gap + 24, 38);
-		ctx.strokeStyle = '#1e2942';
-		ctx.beginPath();
-		ctx.moveTo(ia.width + gap / 2, bar);
-		ctx.lineTo(ia.width + gap / 2, cv.height);
-		ctx.stroke();
-		return cv.toDataURL('image/png');
-	}, shots);
-
-	writeFileSync(`${SHOTS}/03-exa-compare.png`, Buffer.from(composed.split(',')[1], 'base64'));
+	await pair(page, shots, ['exa 1.0 — 물리적 사실', 'exa 2.5 — 만화'], `${SHOTS}/03-exa-compare.png`);
 });
 
 test('boids + elastic — 점이 늘어나 선이 되는 새떼', async ({ page }) => {
@@ -100,39 +114,42 @@ test('boids + elastic — 점이 늘어나 선이 되는 새떼', async ({ page 
 test('exa 0 vs 1.8 — 점이 선이 되는 순간', async ({ page }) => {
 	const shots: string[] = [];
 	for (const exa of [0, 1.8]) {
-		await page.goto(`/?demo=boids-elastic&seed=7&t=22&p=elastic.exa:${exa}`);
-		await ready(page);
-		shots.push(`data:image/png;base64,${(await page.locator('.stage').screenshot()).toString('base64')}`);
+		shots.push(await shot(page, `/?demo=boids-elastic&seed=7&t=22&p=elastic.exa:${exa}`));
 	}
-	const composed = await page.evaluate(async ([a, b]) => {
-		const load = (src: string) =>
-			new Promise<HTMLImageElement>((res) => {
-				const img = new Image();
-				img.onload = () => res(img);
-				img.src = src;
-			});
-		const [ia, ib] = await Promise.all([load(a), load(b)]);
-		const gap = 16;
-		const bar = 56;
-		const cv = document.createElement('canvas');
-		cv.width = ia.width + ib.width + gap;
-		cv.height = Math.max(ia.height, ib.height) + bar;
-		const ctx = cv.getContext('2d')!;
-		ctx.fillStyle = '#0a0c11';
-		ctx.fillRect(0, 0, cv.width, cv.height);
-		ctx.drawImage(ia, 0, bar);
-		ctx.drawImage(ib, ia.width + gap, bar);
-		ctx.fillStyle = '#dce7ff';
-		ctx.font = '600 30px system-ui, sans-serif';
-		ctx.fillText('exa 0 — 점', 24, 38);
-		ctx.fillStyle = '#ffb44d';
-		ctx.fillText('exa 1.8 — 선', ia.width + gap + 24, 38);
-		ctx.strokeStyle = '#1e2942';
-		ctx.beginPath();
-		ctx.moveTo(ia.width + gap / 2, bar);
-		ctx.lineTo(ia.width + gap / 2, cv.height);
-		ctx.stroke();
-		return cv.toDataURL('image/png');
-	}, shots);
-	writeFileSync(`${SHOTS}/05-boids-exa.png`, Buffer.from(composed.split(',')[1], 'base64'));
+	await pair(page, shots, ['exa 0 — 점', 'exa 1.8 — 선'], `${SHOTS}/05-boids-exa.png`);
+});
+
+test('spring — 꼬리가 궤적을 벗어난다 (팔로우스루)', async ({ page }) => {
+	await page.goto('/?demo=lissajous-spring&seed=1&trail=1&t=7.4');
+	await ready(page);
+	await expect(page.getByTestId('notation')).toHaveText(
+		'Lissajous(a:b, δ)@entity + Spring(chain)@deform ×exa1.8'
+	);
+	const shots: string[] = [];
+	for (const exa of [0, 1.8]) {
+		shots.push(await shot(page, `/?demo=lissajous-spring&seed=1&trail=1&t=7.4&p=spring.exa:${exa}`));
+	}
+	// 옅은 선이 몸이 지나간 길, 밝은 선이 꼬리. exa 0이면 둘이 겹친다.
+	await pair(page, shots, ['exa 0 — 궤적을 그대로', 'exa 1.8 — 벗어났다 돌아온다'], `${SHOTS}/06-spring.png`);
+});
+
+test('dla — 점이 붙어 가지가 된다', async ({ page }) => {
+	await page.goto('/?demo=dla&seed=3&t=30');
+	await ready(page);
+	await expect(page.getByTestId('notation')).toHaveText('DLA(격자 성장)@entity');
+	await page.locator('.stage').screenshot({ path: `${SHOTS}/07-dla.png` });
+});
+
+test('fractal zoom — 배율이 달라도 같은 가지 (자기유사)', async ({ page }) => {
+	// 같은 t = 같은 결정. base만 바꿔 배율만 다르게 본다 (zoom = base^frac(t·rate)).
+	await page.goto('/?demo=dla-zoom&seed=3&t=40');
+	await ready(page);
+	await expect(page.getByTestId('notation')).toHaveText(
+		'FractalZoom(base, rate)@space + DLA(격자 성장)@entity'
+	);
+	const shots: string[] = [];
+	for (const base of [1.2, 4]) {
+		shots.push(await shot(page, `/?demo=dla-zoom&seed=3&t=40&p=fractalZoom.base:${base}`));
+	}
+	await pair(page, shots, ['×1.1', '×2.3 — 같은 가지'], `${SHOTS}/08-fractal-zoom.png`);
 });

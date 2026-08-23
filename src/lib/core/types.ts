@@ -32,11 +32,23 @@ export interface Bounds {
 	h: number;
 }
 
+/**
+ * 뷰 변환. `space` 레벨 코어가 쓰는 채널 — 세계가 아니라 세계를 보는 방식을 바꾼다.
+ * zoom 1 · rot 0 · (x,y)=화면 중심이면 아무 일도 일어나지 않는다.
+ */
+export interface Camera {
+	x: number; // 카메라가 바라보는 월드 좌표
+	y: number;
+	zoom: number;
+	rot: number; // rad
+}
+
 /** 코어가 공유하는 상태 공간. 코어 스택은 이 World 하나를 순서대로 변형한다. */
 export interface World {
 	entities: Entity[];
 	t: number; // 누적 시간 (s)
 	bounds: Bounds; // 공간 크기 — 지면·랩어라운드 기준
+	camera: Camera; // 보는 방식 — space 레벨이 쓴다
 	rand(): number; // 시드 고정 난수 [0,1)
 }
 

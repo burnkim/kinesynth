@@ -25,6 +25,9 @@ pnpm shots        # 스크린샷만 → shots/
 | Lissajous | `Lissajous(a:b, δ)@entity` | math / entity / loop |
 | Bounce + Squash | `Bounce(g, e)@entity + Squash(vel.y→scale)@deform ×exa` | physics / entity+deform / event |
 | Boids + Elastic | `Boids(분리·정렬·응집)@flock + Elastic(vel→stretch)@deform ×exa` | bio+physics / flock+deform / steady |
+| Lissajous + Spring | `Lissajous(a:b, δ)@entity + Spring(chain)@deform ×exa` | math+physics / entity+deform / event |
+| DLA · 결정 성장 | `DLA(격자 성장)@entity` | chem / entity / selfsim |
+| DLA + Fractal Zoom | `FractalZoom(base, rate)@space + DLA(격자 성장)@entity` | math+chem / space+entity / selfsim |
 
 - **합성 = 코어 스택.** 패치 케이블 없이 채널 공유로 모듈레이션이 일어난다 —
   Bounce가 쓴 `vel`과 `sig.impact`를 Squash가 읽는다. 실행 순서는 레벨 순
@@ -32,6 +35,9 @@ pnpm shots        # 스크린샷만 → shots/
 - **`exa` (과장 계수).** 1.0 = 물리적 사실. 슬라이더 하나로 사실↔만화를 넘나든다.
   스타일 = 법칙 × 과장.
 - **결정론.** 고정 타임스텝 1/60 + 시드 고정 난수(mulberry32) → 같은 시드 = 같은 움직임.
+
+레벨 4종(space·flock·entity·deform)과 반복 4종(loop·steady·selfsim·event)이 모두 열려 있다.
+도메인은 physics·math·bio·chem 4종 — earth만 비어 있다.
 
 ## URL로 상태 공유
 
@@ -44,7 +50,7 @@ pnpm shots        # 스크린샷만 → shots/
 
 | 파라미터 | 뜻 |
 |---|---|
-| `demo` | 프리셋 id (`lissajous` · `bounce-squash` · `boids-elastic`) |
+| `demo` | 프리셋 id (`lissajous` · `bounce-squash` · `boids-elastic` · `lissajous-spring` · `dla` · `dla-zoom`) |
 | `seed` | 숫자 또는 문자열 (문자열은 해시) |
 | `trail` | `1`이면 궤적 |
 | `t` | 그 시각까지 고정 스텝으로 감고 멈춘다 |
@@ -54,7 +60,7 @@ pnpm shots        # 스크린샷만 → shots/
 
 ```
 src/lib/core/    types.ts  rand.ts  engine.ts   ← 순수 TS. DOM·Svelte import 금지
-src/lib/cores/   lissajous  bounce  squash  boids  elastic
+src/lib/cores/   lissajous  bounce  squash  boids  elastic  spring  dla  fractalZoom
 src/lib/meta/    cores.json                     ← 코어 아카이브 (PRD §11 스키마)
 src/lib/         demos.ts  render.ts
 src/routes/      +page.svelte                   ← 뷰어
@@ -70,6 +76,11 @@ shots/           스크린샷 기록
 1. `src/lib/cores/<id>.ts` — 상단 주석에 **원리 한 줄 + 표기법**, `meta`(domain/level/repeat/writes) + `params`(ParamDef) + `step`.
 2. `src/lib/demos.ts`에 프리셋 등록. 표기법 문자열은 엔진이 만든다.
 3. `src/lib/meta/cores.json`에 메타 추가 (rule·refs·status).
+
+## 배포
+
+Vercel. `@sveltejs/adapter-vercel` + `+layout.ts`의 `prerender = true` →
+서버리스 함수 없이 CDN에서 정적으로 나간다. main에 푸시하면 자동 배포된다.
 
 ## 조작
 
