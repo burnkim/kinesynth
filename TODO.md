@@ -97,6 +97,8 @@
 
 - [x] GitHub `burnkim/kinesynth` 베이스화 (main)
 - [x] `@sveltejs/adapter-vercel` + `prerender = true` → 서버리스 함수 없이 정적 배포
+- [x] **https://kinesynth.vercel.app 라이브.** GitHub 연결 완료 — main 푸시 = 자동 배포.
+      `pnpm smoke`로 배포본 검증(코어 스택 표기법 · URL 파라미터 · 실시간 fps · 콘솔 오류 0)
 
 ## 로그
 

@@ -1,6 +1,6 @@
 # Kinesynth
 
-**움직임 코어 시스템** · v0.1 · 2026-08-23
+**움직임 코어 시스템** · 2026-08-23 · **[kinesynth.vercel.app](https://kinesynth.vercel.app)**
 
 > Kinesynth = kinesis(운동) × synthesizer. 원리를 코어로, 코어를 합성해 움직임을 만든다.
 
@@ -16,6 +16,7 @@ pnpm dev          # 뷰어
 pnpm check        # 타입 검사
 pnpm test:e2e     # Playwright (스크린샷 + 동작 검증)
 pnpm shots        # 스크린샷만 → shots/
+pnpm smoke        # 배포된 사이트 스모크 테스트
 ```
 
 ## v0.1에 있는 것
@@ -79,8 +80,11 @@ shots/           스크린샷 기록
 
 ## 배포
 
-Vercel. `@sveltejs/adapter-vercel` + `+layout.ts`의 `prerender = true` →
-서버리스 함수 없이 CDN에서 정적으로 나간다. main에 푸시하면 자동 배포된다.
+**https://kinesynth.vercel.app** — `main`에 푸시하면 자동 배포된다.
+
+`@sveltejs/adapter-vercel` + `+layout.ts`의 `prerender = true` → 서버리스 함수 없이
+CDN에서 정적으로 나간다. `vercel.json`이 SvelteKit 프리셋을 고정한다.
+배포 후 `pnpm smoke`로 실제 URL에서 코어 스택·URL 파라미터·프레임레이트를 확인한다.
 
 ## 조작
 
