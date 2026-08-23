@@ -22,48 +22,56 @@ async function ready(page: Page) {
 	);
 }
 
-/** 두 장을 브라우저 캔버스에서 나란히 합성 — 외부 이미지 라이브러리 없이. */
-async function pair(
+/** 여러 장을 브라우저 캔버스에서 나란히 합성 — 외부 이미지 라이브러리 없이. */
+async function strip(
 	page: Page,
 	shots: string[],
-	labels: [string, string],
-	out: string
+	labels: string[],
+	out: string,
+	cropBottom = 1
 ): Promise<void> {
 	const composed = await page.evaluate(
-		async ([a, b, la, lb]) => {
+		async ({ shots, labels, cropBottom }) => {
 			const load = (src: string) =>
 				new Promise<HTMLImageElement>((res) => {
 					const img = new Image();
 					img.onload = () => res(img);
 					img.src = src;
 				});
-			const [ia, ib] = await Promise.all([load(a), load(b)]);
+			const imgs = await Promise.all(shots.map(load));
 			const gap = 16;
 			const bar = 56;
+			const w = imgs[0].width;
+			const h = Math.round(imgs[0].height * cropBottom);
 			const cv = document.createElement('canvas');
-			cv.width = ia.width + ib.width + gap;
-			cv.height = Math.max(ia.height, ib.height) + bar;
+			cv.width = w * imgs.length + gap * (imgs.length - 1);
+			cv.height = h + bar;
 			const ctx = cv.getContext('2d')!;
 			ctx.fillStyle = '#0a0c11';
 			ctx.fillRect(0, 0, cv.width, cv.height);
-			ctx.drawImage(ia, 0, bar);
-			ctx.drawImage(ib, ia.width + gap, bar);
 			ctx.font = '600 30px system-ui, sans-serif';
-			ctx.fillStyle = '#dce7ff';
-			ctx.fillText(la, 24, 38);
-			ctx.fillStyle = '#ffb44d';
-			ctx.fillText(lb, ia.width + gap + 24, 38);
-			ctx.strokeStyle = '#1e2942';
-			ctx.beginPath();
-			ctx.moveTo(ia.width + gap / 2, bar);
-			ctx.lineTo(ia.width + gap / 2, cv.height);
-			ctx.stroke();
+			imgs.forEach((im, i) => {
+				const x = i * (w + gap);
+				ctx.drawImage(im, 0, im.height - h, w, h, x, bar, w, h);
+				ctx.fillStyle = i === imgs.length - 1 ? '#ffb44d' : '#dce7ff';
+				ctx.fillText(labels[i], x + 24, 38);
+				if (i > 0) {
+					ctx.strokeStyle = '#1e2942';
+					ctx.beginPath();
+					ctx.moveTo(x - gap / 2, bar);
+					ctx.lineTo(x - gap / 2, cv.height);
+					ctx.stroke();
+				}
+			});
 			return cv.toDataURL('image/png');
 		},
-		[shots[0], shots[1], labels[0], labels[1]]
+		{ shots, labels, cropBottom }
 	);
 	writeFileSync(out, Buffer.from(composed.split(',')[1], 'base64'));
 }
+
+const pair = (page: Page, shots: string[], labels: [string, string], out: string) =>
+	strip(page, shots, labels, out);
 
 /** stage 스크린샷을 data URL로. */
 async function shot(page: Page, url: string): Promise<string> {
@@ -152,4 +160,27 @@ test('fractal zoom — 배율이 달라도 같은 가지 (자기유사)', async 
 		shots.push(await shot(page, `/?demo=dla-zoom&seed=3&t=40&p=fractalZoom.base:${base}`));
 	}
 	await pair(page, shots, ['×1.1', '×2.3 — 같은 가지'], `${SHOTS}/08-fractal-zoom.png`);
+});
+
+test('bounce + squash + spring — 라우팅으로 갈라 건 팔로우스루', async ({ page }) => {
+	await page.goto('/?demo=bounce-tail&seed=1&t=0.79');
+	await ready(page);
+	await expect(page.getByTestId('notation')).toHaveText(
+		'Bounce(g, e)@entity[ball] + Squash(vel.y→scale)@deform[ball]×exa1.8 + ' +
+			'Spring(chain)@deform[tail←ball]×exa1.8'
+	);
+	await expect(page.locator('.badge')).toContainText('2 entities');
+
+	// 낙하 → 접지 → 되튐. 몸이 멈춘 순간 꼬리는 계속 내려간다.
+	const shots: string[] = [];
+	for (const t of [0.72, 0.79, 0.95]) {
+		shots.push(await shot(page, `/?demo=bounce-tail&seed=1&t=${t}`));
+	}
+	await strip(
+		page,
+		shots,
+		['0.72s — 낙하, 늘어남', '0.79s — 접지, 꼬리는 계속 내려간다', '0.95s — 되튐, 꼬리가 감긴다'],
+		`${SHOTS}/09-bounce-tail.png`,
+		0.62
+	);
 });

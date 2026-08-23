@@ -11,8 +11,7 @@
  * 순수 TS. DOM import 금지.
  */
 
-import { makeEntity } from '../core/engine';
-import type { Core, ParamDef, Params, Vec, World } from '../core/types';
+import type { Core, ParamDef, Params, StepCtx, Vec, World } from '../core/types';
 
 const GROUND_RATIO = 0.86; // 지면 높이 (화면 비율)
 const IMPACT_TAU = 0.085; // 충격 신호 감쇠 시상수 (s)
@@ -56,28 +55,29 @@ export const bounce: Core = {
 		writes: [
 			{ channel: 'pos', mode: 'set' },
 			{ channel: 'vel', mode: 'set' },
-			{ channel: 'sig.impact', mode: 'set' }
+			{ channel: 'sig.impact', mode: 'set' },
+			// r 슬라이더를 실시간 반영하느라 매 스텝 다시 그린다 → points의 단독 소유자다
+			{ channel: 'points', mode: 'set' },
+			{ channel: 'closed', mode: 'set' }
 		]
 	},
 
 	params,
 
-	init(w: World, p: Params) {
-		w.entities.push(
-			makeEntity({
-				pos: { x: w.bounds.w * 0.3, y: w.bounds.h * p.h0 },
-				vel: { x: p.drift, y: 0 },
-				points: polygon(12, p.r),
-				closed: true, // 닫힘 = 면
-				sig: { impact: 0 } // 이 채널의 소유자는 Bounce다
-			})
-		);
+	init(w: World, p: Params, ctx: StepCtx) {
+		ctx.spawn({
+			pos: { x: w.bounds.w * 0.3, y: w.bounds.h * p.h0 },
+			vel: { x: p.drift, y: 0 },
+			points: polygon(12, p.r),
+			closed: true, // 닫힘 = 면
+			sig: { impact: 0 } // 이 채널의 소유자는 Bounce다
+		});
 	},
 
-	step(w: World, p: Params, dt: number) {
+	step(w: World, p: Params, dt: number, ctx: StepCtx) {
 		const gy = groundY(w);
 
-		for (const e of w.entities) {
+		for (const e of ctx.targets) {
 			e.points = polygon(12, p.r); // r 슬라이더를 실시간 반영
 			e.sig.impact = (e.sig.impact ?? 0) * Math.exp(-dt / IMPACT_TAU); // 소유한 신호를 감쇠
 

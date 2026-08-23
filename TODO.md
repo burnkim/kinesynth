@@ -110,3 +110,47 @@
   freq 3.4 / damp 0.45에서 exa 0(궤적에 밀착) → 1.8(벗어남) → 3(크게 휘둘림)이 눈으로 갈린다.
 - 자기유사는 시간을 고정하고 배율만 바꿔서 보여야 한다. 같은 t·같은 결정에 `base`만 다르게 준
   두 장(×1.1 / ×2.3)이 그 증거다.
+
+---
+
+# v0.2 관문
+
+원칙: **points(지오메트리)는 단독 소유** — 한 엔티티의 points에 set하는 코어는 하나만. 겹치면 엔진이 경고.
+충돌은 라우팅으로 푼다. **수치 채널(pos·vel·scale·rot)은 write mode 합성** — set 하나 + add 여러 개
+(deform의 scale은 mul).
+
+## v0.2 관문 1 — 라우팅 + write mode
+
+- [x] Entity에 id, tags: string[] 추가. addEntity/removeEntity/tagEntity가 `world.rev`를 올린다
+- [x] `Patch { core, target?, anchor? }`. 코어만 적으면 '*' — 기존 6개 프리셋 전부 무수정 통과
+- [x] 패치별 대상 캐시, `world.rev` 바뀔 때만 재검색. '*'는 필터 자체를 건너뛴다. ctx 객체도 재사용(스텝당 할당 0). 500개체 태그 대상 2.76ms/step (전체 대상 2.5ms)
+- [x] `auditWrites()` — 스택 세울 때 한 번, 매 프레임 비용 0. 셀렉터 겹침·채널 접두사(vel↔vel.y)·세계 채널(camera.*)까지 본다. 경고는 `engine.warnings` + 콘솔 + 뷰어 패널.
+      **scale은 엔진이 매 스텝 (1,1)로 초기화** → Squash·Elastic을 mul로 바꿔 순서에 덜 민감하게
+- [x] 앵커는 패치에 둔다(`anchor: 'ball'`) — 태그는 문자열이라 숫자 Params에 못 들어간다.
+      코어는 `meta.anchor`로 앵커를 받는다고 선언하고 `ctx.anchor`로 받는다.
+      앵커가 있으면 Spring이 꼬리 전용 엔티티를 만들어 뿌리를 몸에 건다. 세로 오프셋은 몸의 scale.y를 따라간다
+- [x] `코어@레벨[대상←앵커]`. exa 가진 코어가 둘 이상이면 코어마다 붙인다
+- [x] `bounce-tail` 프리셋 + `shots/09`. 낙하(늘어남) → 접지(납작, 꼬리는 계속 내려감) → 되튐(꼬리 감김)
+
+## v0.2 관문 2 — 메타 단일 소스
+
+- [ ] cores/index.ts 레지스트리 → cores.json 자동 생성 (pnpm gen:meta), dev/build 훅
+- [ ] cores.json 수기 편집 금지 (생성물 주석 표기)
+- [ ] 코어 검증 스크립트: 필수 메타·repeat 선언·파라미터 범위·순수성 — W4 학생 기여 게이트
+
+## v0.2 관문 3 — W3 코어 2종
+
+- [ ] core/noise.ts 유틸 (펄린 2D, 의존성 0)
+- [ ] NoiseField@space (steady): 흐름장 → vel에 add — write mode 첫 실전
+- [ ] Fourier@entity (loop): 에피사이클, 계수 프리셋, 트레일이 곡선을 그림
+- [ ] gen:meta 재실행 + 데모 프리셋 + 스크린샷
+
+### 관문 1 로그
+
+- `bounce`가 매 스텝 `points`를 다시 그리는데(r 슬라이더 실시간 반영) 선언에 없었다.
+  그래서 감사기가 Bounce+Spring 충돌을 못 잡았다 — **선언되지 않은 쓰기는 감사기에 보이지 않는다.**
+  소유 판정 기준을 "매 스텝 쓰는가"로 정하고 types.ts에 명시.
+- 코어가 `w.entities`를 직접 만지면 라우팅이 성립하지 않는다. `ctx.spawn`/`ctx.despawn`으로
+  바꾸니 대상 태그가 자동으로 붙고 캐시도 일관되게 유지된다 — 엔진의 후처리 태깅 로직이 통째로 사라졌다.
+- Spring의 월드 이동량을 `vel*dt`로 잡았는데 접지에서 위치가 튈 때 어긋난다.
+  직전 머리 위치를 상태에 넣고 **위치 차이**로 바꿔 정확해졌다.

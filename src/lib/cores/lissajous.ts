@@ -12,8 +12,7 @@
  * 순수 TS. DOM import 금지.
  */
 
-import { makeEntity } from '../core/engine';
-import type { Core, ParamDef, Params, World } from '../core/types';
+import type { Core, ParamDef, Params, StepCtx, World } from '../core/types';
 
 /** 진폭 1.0 = 화면 짧은 변의 42% — 캔버스 크기와 무관하게 같은 그림이 나오도록. */
 const radius = (w: World) => 0.42 * Math.min(w.bounds.w, w.bounds.h);
@@ -45,18 +44,18 @@ export const lissajous: Core = {
 
 	params,
 
-	init(w: World) {
+	init(w: World, _p: Params, ctx: StepCtx) {
 		// 점 하나짜리 엔티티 = 점. 뷰어의 트레일 옵션이 이 점을 선으로 만든다.
-		w.entities.push(makeEntity({ pos: { x: w.bounds.w / 2, y: w.bounds.h / 2 } }));
+		ctx.spawn({ pos: { x: w.bounds.w / 2, y: w.bounds.h / 2 } });
 	},
 
-	step(w: World, p: Params) {
+	step(w: World, p: Params, _dt: number, ctx: StepCtx) {
 		const R = radius(w);
 		const cx = w.bounds.w / 2;
 		const cy = w.bounds.h / 2;
 		const om = 2 * Math.PI * p.speed; // θ = om·t
 
-		for (const e of w.entities) {
+		for (const e of ctx.targets) {
 			const tx = p.a * om * w.t + p.delta;
 			const ty = p.b * om * w.t;
 			e.pos.x = cx + p.A * R * Math.sin(tx);

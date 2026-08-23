@@ -1,13 +1,14 @@
 /**
  * Kinesynth · 데모 프리셋 — 코어 스택의 목록
  *
- * 합성 = 코어를 겹치는 것. 프리셋은 "어떤 코어를 어떤 순서로 쌓았나"의 선언일 뿐이고,
+ * 합성 = 코어를 겹치는 것 + **어디에 걸지**. 프리셋은 그 선언일 뿐이고,
  * 실행 순서·표기법 문자열은 엔진이 레벨 순으로 알아서 만든다 (PRD §4, §5).
+ * 대상을 안 적으면 '*' (전체) — v0.1 데모들이 그대로 도는 이유다.
  *
  * 순수 TS. DOM import 금지.
  */
 
-import type { Core, Params } from './core/types';
+import type { Core, Params, Patch } from './core/types';
 import { lissajous } from './cores/lissajous';
 import { bounce } from './cores/bounce';
 import { squash } from './cores/squash';
@@ -22,7 +23,8 @@ export interface Demo {
 	title: string;
 	/** 점·선·면 중 무엇으로 읽히는가 — 강의 화면용 한 줄 */
 	form: string;
-	cores: Core[];
+	/** 코어만 적으면 대상은 '*'. 갈라 걸려면 { core, target, anchor }로 적는다. */
+	patch: (Core | Patch)[];
 	/** coreId → 이 프리셋에서만 바꿀 기본값 */
 	overrides?: Record<string, Params>;
 	trail: boolean;
@@ -36,7 +38,7 @@ export const demos: Demo[] = [
 		id: 'lissajous',
 		title: 'Lissajous',
 		form: '점 — 트레일을 켜면 선이 된다',
-		cores: [lissajous],
+		patch: [lissajous],
 		trail: true,
 		trailLen: 420, // 7초 — speed 0.16의 한 바퀴(6.25s)가 다 남는다
 		seed: 1
@@ -45,7 +47,7 @@ export const demos: Demo[] = [
 		id: 'bounce-squash',
 		title: 'Bounce + Squash',
 		form: '면 — 12각 폐곡선. exa로 사실↔만화를 넘나든다',
-		cores: [bounce, squash],
+		patch: [bounce, squash],
 		trail: false,
 		trailLen: 90,
 		seed: 1
@@ -54,7 +56,7 @@ export const demos: Demo[] = [
 		id: 'boids-elastic',
 		title: 'Boids + Elastic',
 		form: '점이 늘어나 선이 되는 새떼 — exa를 0으로 내리면 다시 점이 된다',
-		cores: [boids, elastic],
+		patch: [boids, elastic],
 		trail: false,
 		trailLen: 24,
 		seed: 7
@@ -63,7 +65,7 @@ export const demos: Demo[] = [
 		id: 'lissajous-spring',
 		title: 'Lissajous + Spring',
 		form: '선 — 꼬리가 몸의 궤적을 벗어났다가 돌아온다. exa 0이면 궤적을 그대로 따라간다',
-		cores: [lissajous, spring],
+		patch: [lissajous, spring],
 		// 트레일이 몸이 지나간 길이고, 꼬리가 거기서 얼마나 벗어나는지가 팔로우스루다.
 		overrides: { lissajous: { speed: 0.09 } },
 		trail: true,
@@ -71,10 +73,29 @@ export const demos: Demo[] = [
 		seed: 1
 	},
 	{
+		id: 'bounce-tail',
+		title: 'Bounce + Squash + Spring',
+		form: '면 + 선 — 공이 바닥을 치고 멈추는 순간 꼬리가 계속 간다 (팔로우스루 교과서)',
+		// points는 단독 소유다. 공의 12각형과 꼬리의 체인을 한 엔티티에 겹칠 수 없어서
+		// 라우팅으로 갈라 건다: 몸은 [ball], 꼬리는 [tail]이고 뿌리를 ball에 건다.
+		patch: [
+			{ core: bounce, target: 'ball' },
+			{ core: squash, target: 'ball' },
+			{ core: spring, target: 'tail', anchor: 'ball' }
+		],
+		overrides: {
+			bounce: { r: 40, drift: 90, e: 0.78 },
+			spring: { n: 14, len: 13, ay: -40, freq: 3.0 }
+		},
+		trail: false,
+		trailLen: 90,
+		seed: 1
+	},
+	{
 		id: 'dla',
 		title: 'DLA · 결정 성장',
 		form: '점이 붙어 면이 되는 과정 — 채워지지 않고 가지가 된다',
-		cores: [dla],
+		patch: [dla],
 		trail: false,
 		trailLen: 30,
 		seed: 3
@@ -83,7 +104,7 @@ export const demos: Demo[] = [
 		id: 'dla-zoom',
 		title: 'DLA + Fractal Zoom',
 		form: '자기유사 — 한 옥타브 들어가도 가지의 모양이 같다',
-		cores: [dla, fractalZoom],
+		patch: [dla, fractalZoom],
 		overrides: {
 			dla: { cell: 4, n: 1100, walkers: 110 },
 			fractalZoom: { rate: 0.09, base: 2, fx: 0.5, fy: 0.5 }

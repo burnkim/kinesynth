@@ -15,8 +15,7 @@
  * 순수 TS. DOM import 금지.
  */
 
-import { makeEntity } from '../core/engine';
-import type { Core, Entity, ParamDef, Params, World } from '../core/types';
+import type { Core, Entity, ParamDef, Params, StepCtx, World } from '../core/types';
 
 const SEG = 1.3; // 로컬 지오메트리 = 아주 짧은 2점 선분. 정지하면 점, Elastic이 늘리면 선.
 const RESPONSE = 2.6; // 선회 응답 (1/s) — 목표 속도를 얼마나 빨리 따라잡는가
@@ -33,9 +32,9 @@ function wrapDelta(d: number, size: number): number {
 let accX = new Float64Array(0);
 let accY = new Float64Array(0);
 
-function newBoid(w: World, maxV: number): Entity {
+function newBoid(w: World, ctx: StepCtx, maxV: number): Entity {
 	const a = w.rand() * Math.PI * 2;
-	return makeEntity({
+	return ctx.spawn({
 		pos: { x: w.rand() * w.bounds.w, y: w.rand() * w.bounds.h },
 		vel: { x: Math.cos(a) * maxV, y: Math.sin(a) * maxV },
 		points: [
@@ -72,16 +71,16 @@ export const boids: Core = {
 
 	params,
 
-	init(w: World, p: Params) {
-		for (let i = 0; i < Math.round(p.n); i++) w.entities.push(newBoid(w, p.speed));
+	init(w: World, p: Params, ctx: StepCtx) {
+		for (let i = 0; i < Math.round(p.n); i++) newBoid(w, ctx, p.speed);
 	},
 
-	step(w: World, p: Params, dt: number) {
-		const es = w.entities;
+	step(w: World, p: Params, dt: number, ctx: StepCtx) {
+		const es = ctx.targets;
 		const maxV = p.speed;
 		const n = Math.round(p.n);
-		while (es.length > n) es.pop(); // 개체 수 슬라이더를 실시간 반영
-		while (es.length < n) es.push(newBoid(w, maxV));
+		while (es.length > n) ctx.despawn(es[es.length - 1]); // 개체 수 슬라이더를 실시간 반영
+		while (es.length < n) newBoid(w, ctx, maxV);
 		if (accX.length < n) {
 			accX = new Float64Array(n);
 			accY = new Float64Array(n);

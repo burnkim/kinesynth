@@ -13,7 +13,7 @@
  * 순수 TS. DOM import 금지.
  */
 
-import type { Core, ParamDef, Params, World } from '../core/types';
+import type { Core, ParamDef, Params, StepCtx, World } from '../core/types';
 
 const K_STRETCH = 0.28; // exa=1일 때 최대 신장률
 const K_SQUASH = 0.26; // exa=1일 때 최대 압축률
@@ -38,13 +38,13 @@ export const squash: Core = {
 		principle: '빠르면 늘어나고 부딪히면 납작해진다 — 부피는 그대로.',
 		notation: 'Squash(vel.y→scale)@deform',
 		reads: ['vel.y', 'sig.impact'],
-		writes: [{ channel: 'scale', mode: 'set' }]
+		writes: [{ channel: 'scale', mode: 'mul' }]
 	},
 
 	params,
 
-	step(w: World, p: Params) {
-		for (const e of w.entities) {
+	step(w: World, p: Params, _dt: number, ctx: StepCtx) {
+		for (const e of ctx.targets) {
 			const impactN = clamp01((e.sig.impact ?? 0) / (p.vmax * IMPACT_REF));
 			const speedN = clamp01(Math.abs(e.vel.y) / p.vmax);
 
@@ -55,8 +55,9 @@ export const squash: Core = {
 			let sy = 1 + stretch - squashAmt;
 			sy = sy < SY_MIN ? SY_MIN : sy > SY_MAX ? SY_MAX : sy;
 
-			e.scale.y = sy;
-			e.scale.x = 1 / sy; // 부피 보존
+			// scale은 엔진이 매 스텝 1로 되돌린다 — deform은 그 위에 곱한다(mul).
+			e.scale.y *= sy;
+			e.scale.x *= 1 / sy; // 부피 보존
 		}
 	}
 };

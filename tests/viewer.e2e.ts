@@ -44,3 +44,33 @@ test('엔티티 500에서 실시간 60fps (PRD §8 성능 목표)', async ({ pag
 	expect(await page.locator('.badge').innerText()).toContain('500 entities');
 	expect(fps).toBeGreaterThanOrEqual(55);
 });
+
+test('라우팅 — 대상이 갈리면 points 소유가 겹치지 않는다', async ({ page }) => {
+	const warn: string[] = [];
+	page.on('console', (m) => m.type() === 'warning' && warn.push(m.text()));
+
+	await page.goto('/?demo=bounce-tail&seed=1&t=0.79');
+	await page.locator('canvas').waitFor();
+
+	// 몸(12각 폐곡선)과 꼬리(체인)가 서로 다른 엔티티다
+	await expect(page.locator('.badge')).toContainText('2 entities');
+	// 표기법에 대상과 앵커가 드러난다
+	await expect(page.getByTestId('notation')).toContainText('[ball]');
+	await expect(page.getByTestId('notation')).toContainText('[tail←ball]');
+	// 소유 규칙 위반 없음 — 경고 패널도, 콘솔 경고도 없다
+	await expect(page.locator('.block.warn')).toHaveCount(0);
+	expect(warn.filter((m) => m.includes('kinesynth'))).toEqual([]);
+});
+
+test('모든 프리셋이 소유 규칙을 지킨다', async ({ page }) => {
+	const ids = await page.goto('/').then(async () => {
+		await page.locator('#demo').waitFor();
+		return page.locator('#demo option').evaluateAll((os) => os.map((o) => (o as HTMLOptionElement).value));
+	});
+	expect(ids.length).toBeGreaterThanOrEqual(7);
+	for (const id of ids) {
+		await page.goto(`/?demo=${id}`);
+		await page.locator('canvas').waitFor();
+		await expect(page.locator('.block.warn'), `프리셋 ${id}`).toHaveCount(0);
+	}
+});

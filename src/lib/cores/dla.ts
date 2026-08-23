@@ -13,8 +13,7 @@
  * 순수 TS. DOM import 금지.
  */
 
-import { makeEntity } from '../core/engine';
-import type { Core, Entity, ParamDef, Params, World } from '../core/types';
+import type { Core, Entity, ParamDef, Params, StepCtx, World } from '../core/types';
 
 const TAU = Math.PI * 2;
 
@@ -23,9 +22,9 @@ let grid = new Uint8Array(0);
 let gCols = 0;
 let gRows = 0;
 
-function spawn(w: World, r: number): Entity {
+function walker(w: World, ctx: StepCtx, r: number): Entity {
 	const a = w.rand() * TAU;
-	return makeEntity({
+	return ctx.spawn({
 		pos: { x: w.bounds.w / 2 + Math.cos(a) * r, y: w.bounds.h / 2 + Math.sin(a) * r },
 		sig: { stuck: 0 }
 	});
@@ -58,15 +57,14 @@ export const dla: Core = {
 
 	params,
 
-	init(w: World, p: Params) {
+	init(w: World, p: Params, ctx: StepCtx) {
 		// 씨앗 하나. 여기서부터 전부 자란다.
-		w.entities.push(
-			makeEntity({ pos: { x: w.bounds.w / 2, y: w.bounds.h / 2 }, sig: { stuck: 1 } })
-		);
-		for (let i = 0; i < Math.round(p.walkers); i++) w.entities.push(spawn(w, p.cell * 8));
+		ctx.spawn({ pos: { x: w.bounds.w / 2, y: w.bounds.h / 2 }, sig: { stuck: 1 } });
+		for (let i = 0; i < Math.round(p.walkers); i++) walker(w, ctx, p.cell * 8);
 	},
 
-	step(w: World, p: Params, dt: number) {
+	step(w: World, p: Params, dt: number, ctx: StepCtx) {
+		const es = ctx.targets;
 		const W = w.bounds.w;
 		const H = w.bounds.h;
 		const cx = W / 2;
@@ -86,7 +84,7 @@ export const dla: Core = {
 		// 붙은 입자를 격자에 찍고, 동시에 결정 반지름을 잰다
 		let clusterR = 0;
 		let free = 0;
-		for (const e of w.entities) {
+		for (const e of es) {
 			if (!e.sig.stuck) {
 				free++;
 				continue;
@@ -105,7 +103,7 @@ export const dla: Core = {
 		const target = Math.round(p.walkers);
 		const total = Math.round(p.n);
 
-		for (const e of w.entities) {
+		for (const e of es) {
 			if (e.sig.stuck) continue;
 
 			// 무작위 걸음 + 중심 쪽 약한 끌림 (없으면 걸어 나가 영영 돌아오지 않는다)
@@ -157,14 +155,14 @@ export const dla: Core = {
 		}
 
 		// 보행자 수를 목표에 맞춘다 — 붙은 만큼 새로 태어난다
-		while (free < target && w.entities.length < total) {
-			w.entities.push(spawn(w, birthR));
+		while (free < target && es.length < total) {
+			walker(w, ctx, birthR);
 			free++;
 		}
-		while (free > target && w.entities.length > 1) {
-			const last = w.entities[w.entities.length - 1];
+		while (free > target && es.length > 1) {
+			const last = es[es.length - 1];
 			if (last.sig.stuck) break; // 결정은 건드리지 않는다
-			w.entities.pop();
+			ctx.despawn(last);
 			free--;
 		}
 	}

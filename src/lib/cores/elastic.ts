@@ -14,7 +14,7 @@
  * 순수 TS. DOM import 금지.
  */
 
-import type { Core, ParamDef, Params, World } from '../core/types';
+import type { Core, ParamDef, Params, StepCtx, World } from '../core/types';
 
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
@@ -36,21 +36,21 @@ export const elastic: Core = {
 		reads: ['vel'],
 		writes: [
 			{ channel: 'rot', mode: 'set' },
-			{ channel: 'scale', mode: 'set' }
+			{ channel: 'scale', mode: 'mul' }
 		]
 	},
 
 	params,
 
-	step(w: World, p: Params) {
-		for (const e of w.entities) {
+	step(w: World, p: Params, _dt: number, ctx: StepCtx) {
+		for (const e of ctx.targets) {
 			const s = Math.hypot(e.vel.x, e.vel.y);
 			if (s > 0) e.rot = Math.atan2(e.vel.y, e.vel.x); // 진행 방향 정렬
 
 			const n = clamp01(s / p.vmax);
 			const sx = 1 + p.kmax * p.exa * n * n;
-			e.scale.x = sx;
-			e.scale.y = 1 / sx; // 부피 보존 — 선에서는 안 보이지만 원리는 Squash와 같다
+			e.scale.x *= sx; // 엔진이 매 스텝 1로 되돌린다 — 그 위에 곱한다
+			e.scale.y *= 1 / sx; // 부피 보존 — 선에서는 안 보이지만 원리는 Squash와 같다
 		}
 	}
 };

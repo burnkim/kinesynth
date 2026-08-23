@@ -29,7 +29,8 @@
 	let trail = $state(q.get('trail') === '1');
 	let notation = $state('');
 	let fps = $state(0);
-	let ui = $state<{ core: Core; vals: Params }[]>([]);
+	let ui = $state<{ core: Core; target: string; anchor?: string; vals: Params }[]>([]);
+	let warnings = $state<string[]>([]);
 
 	// $state.raw — 재할당만 반응형. 월드를 깊은 프록시로 감싸면 60fps 변형이 다 추적돼 느려진다.
 	let engine = $state.raw<Engine | null>(null);
@@ -55,7 +56,7 @@
 	function build() {
 		const d = demoById(untrack(() => demoId));
 		const r = stage.getBoundingClientRect();
-		engine = createEngine(d.cores, {
+		engine = createEngine(d.patch, {
 			seed: toSeed(untrack(() => seedText)),
 			bounds: { w: r.width, h: r.height }
 		});
@@ -71,8 +72,14 @@
 			if (Number.isFinite(t) && t > 0) engine.seek(t);
 		}
 		// vals는 표시용 반응형 사본. 엔진은 자기 레코드를 읽으므로 setParam이 양쪽 다 쓴다.
-		ui = engine.stack.map((c) => ({ core: c, vals: { ...engine!.values[c.meta.id] } }));
+		ui = engine.stack.map((pt) => ({
+			core: pt.core,
+			target: pt.target ?? '*',
+			anchor: pt.anchor,
+			vals: { ...engine!.values[pt.core.meta.id] }
+		}));
 		notation = engine.notation();
+		warnings = engine.warnings;
 	}
 
 	/** 슬라이더 → 화면 표시(반응형 사본) + 시뮬레이션(엔진 레코드) 양쪽에 쓴다. */
@@ -138,7 +145,7 @@
 			if (playing) engine.advance(dt);
 
 			const r = stage.getBoundingClientRect();
-			const hasGround = engine.stack.some((c) => c.meta.id === 'bounce');
+			const hasGround = engine.stack.some((pt) => pt.core.meta.id === 'bounce');
 			drawWorld(ctx, engine.world, r.width, r.height, {
 				trails: trail ? engine.trails : undefined,
 				groundY: hasGround ? groundY(engine.world) : undefined
@@ -212,12 +219,22 @@
 				<label class="chk"><input type="checkbox" bind:checked={trail} /> 트레일</label>
 			</section>
 
+			{#if warnings.length}
+				<section class="block warn">
+					<div class="warn-head">소유 규칙 위반 {warnings.length}건</div>
+					{#each warnings as m (m)}<p>{m}</p>{/each}
+				</section>
+			{/if}
+
 			{#each ui as item (item.core.meta.id)}
 				<section class="block core">
 					<div class="core-head">
 						<span class="core-name">{item.core.meta.name}</span>
 						<span class="tag">{item.core.meta.level}</span>
 						<span class="tag alt">{item.core.meta.repeat}</span>
+						{#if item.target !== '*'}
+							<span class="tag tgt">[{item.target}{item.anchor ? `←${item.anchor}` : ''}]</span>
+						{/if}
 					</div>
 					<p class="principle">{item.core.meta.principle}</p>
 					{#each item.core.params as def (def.key)}
@@ -405,6 +422,27 @@
 	.tag.alt {
 		color: #b39cff;
 		border-color: #37305e;
+	}
+	.tag.tgt {
+		color: #ffd18f;
+		border-color: #5a4526;
+		font-family: ui-monospace, Menlo, monospace;
+	}
+	.block.warn {
+		background: #241a12;
+		border-color: #5a4526;
+	}
+	.warn-head {
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: #ffb44d;
+		margin-bottom: 0.35rem;
+	}
+	.block.warn p {
+		margin: 0.25rem 0 0;
+		font-size: 0.7rem;
+		line-height: 1.5;
+		color: #d7c3a6;
 	}
 	.principle {
 		margin: 0 0 0.55rem;
