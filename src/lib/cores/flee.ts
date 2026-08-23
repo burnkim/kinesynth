@@ -19,6 +19,7 @@
  * 순수 TS. DOM import 금지.
  */
 
+import { wrapDelta } from '../core/space';
 import type { Core, ParamDef, Params, StepCtx, World } from '../core/types';
 
 const params: ParamDef[] = [
@@ -36,7 +37,7 @@ export const flee: Core = {
 		level: 'flock',
 		repeat: 'event',
 		principle: '위협이 다가오면 흩어진다 — 구멍이 열렸다가 다시 메워진다.',
-		rule: 'd = |pos − anchor| · d < radius이면 vel += (pos−anchor)/d · force · (1−d/radius)^sharp (add) · 반경 밖은 0 · 속도 상한은 Boids가 쥔다 · 앵커는 한 프레임 전 위치(flock이 entity보다 먼저 돈다)',
+		rule: 'd = 토러스최단거리(pos, anchor) · d < radius이면 vel += (pos−anchor)/d · force · (1−d/radius)^sharp (add) · 반경 밖은 0 · 속도 상한은 Boids가 쥔다 · 앵커는 한 프레임 전 위치(flock이 entity보다 먼저 돈다)',
 		notation: 'Flee(거리→회피)@flock',
 		refs: [
 			'Craig Reynolds, Steering Behaviors for Autonomous Characters, GDC 1999 — flee / evade',
@@ -62,8 +63,9 @@ export const flee: Core = {
 		const push = p.force * dt;
 
 		for (const e of ctx.targets) {
-			const dx = e.pos.x - a.pos.x;
-			const dy = e.pos.y - a.pos.y;
+			// 토러스 최단 거리 — 무리와 같은 세계에 산다
+			const dx = wrapDelta(e.pos.x - a.pos.x, w.bounds.w);
+			const dy = wrapDelta(e.pos.y - a.pos.y, w.bounds.h);
 			const d = Math.hypot(dx, dy);
 			if (d >= r || d === 0) {
 				e.sig.flee = 0;

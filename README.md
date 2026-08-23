@@ -42,6 +42,7 @@ pnpm check:cores  # 코어 검증 (메타·파라미터 범위·순수성)
 |---|---|
 | 바람 속 군무 | `NoiseField@space + Boids@flock + Elastic@deform` |
 | 포식자 산개 | `Flee@flock[bird←hunter] + Boids@flock[bird] + Orbit@entity[hunter] + Elastic@deform[bird]` |
+| 사냥 | `Flee@flock[bird←hunter] + Boids@flock[bird] + Seek@entity[hunter←bird] + Elastic@deform[bird]` |
 
 - **합성 = 코어 스택.** 패치 케이블 없이 채널 공유로 모듈레이션이 일어난다 —
   Bounce가 쓴 `vel`과 `sig.impact`를 Squash가 읽는다. 실행 순서는 레벨 순
@@ -50,7 +51,7 @@ pnpm check:cores  # 코어 검증 (메타·파라미터 범위·순수성)
   스타일 = 법칙 × 과장.
 - **결정론.** 고정 타임스텝 1/60 + 시드 고정 난수(mulberry32) → 같은 시드 = 같은 움직임.
 
-코어 12개. 레벨 4종(space·flock·entity·deform), 반복 4종(loop·steady·selfsim·event),
+코어 13개. 레벨 4종(space·flock·entity·deform), 반복 4종(loop·steady·selfsim·event),
 도메인 5종(physics·math·bio·chem·earth)이 **모두 열려 있다**.
 축이 다 열린 뒤의 깊이는 칸이 아니라 **장면**에서 온다 — 매트릭스는 지도이지 할당량이 아니다.
 
@@ -74,9 +75,9 @@ pnpm check:cores  # 코어 검증 (메타·파라미터 범위·순수성)
 ## 구조
 
 ```
-src/lib/core/    types  rand  engine  noise      ← 순수 TS. DOM·Svelte import 금지
+src/lib/core/    types rand engine noise space      ← 순수 TS. DOM·Svelte import 금지
 src/lib/cores/   lissajous bounce squash boids elastic spring dla
-                 fractalZoom noiseField fourier orbit flee
+                 fractalZoom noiseField fourier orbit flee seek
 src/lib/cores/index.ts                          ← 레지스트리. 코어를 만들면 여기 등록
 src/lib/meta/    cores.json                     ← **생성물**. 손으로 고치지 않는다 (pnpm gen:meta)
 src/lib/         demos.ts  render.ts
@@ -104,6 +105,10 @@ patch: [
 ```
 
 → `Bounce(g, e)@entity[ball] + Squash(vel.y→scale)@deform[ball]×exa1.8 + Spring(chain)@deform[tail←ball]×exa1.8`
+
+**앵커는 하나일 수도 그룹일 수도 있다.** 코어는 `ctx.anchor`(첫 하나) 또는 `ctx.anchors`(전부)로 받는다 —
+체인의 뿌리·공전의 중심은 하나면 되고, 무리를 쫓는 추격은 그룹 전체가 필요하다.
+대상과 앵커 모두 `world.rev`가 바뀔 때만 다시 고른다 (매 프레임 재검색 없음).
 
 **같은 코어를 여러 번** 걸 수도 있다. 그때 파라미터는 패치 key로 갈린다 — 유일하면 `id`,
 겹치면 `id@대상`. `overrides`와 URL 파라미터가 같은 key를 쓴다:

@@ -21,6 +21,7 @@ import { noiseField } from './noiseField';
 import { fourier } from './fourier';
 import { orbit } from './orbit';
 import { flee } from './flee';
+import { seek } from './seek';
 
 export const cores: Core[] = [
 	lissajous,
@@ -34,9 +35,10 @@ export const cores: Core[] = [
 	noiseField,
 	fourier,
 	orbit,
-	flee
+	flee,
+	seek
 ];
 
 export const coreById = (id: string): Core | undefined => cores.find((c) => c.meta.id === id);
 
-export { lissajous, bounce, squash, boids, elastic, spring, dla, fractalZoom, noiseField, fourier, orbit, flee };
+export { lissajous, bounce, squash, boids, elastic, spring, dla, fractalZoom, noiseField, fourier, orbit, flee, seek };

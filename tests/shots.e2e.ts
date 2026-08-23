@@ -260,3 +260,26 @@ test('장면 · 포식자 산개', async ({ page }) => {
 		`${SHOTS}/14-scene-hunt.png`
 	);
 });
+
+test('장면 · 사냥 — 그룹 앵커', async ({ page }) => {
+	await page.goto('/?demo=scene-chase&t=24');
+	await ready(page);
+	// Seek의 앵커가 그룹이다: [hunter←bird] — bird 하나가 아니라 bird 전부를 본다
+	await expect(page.getByTestId('notation')).toHaveText(
+		'Flee(거리→회피)@flock[bird←hunter] + Boids(분리·정렬·응집)@flock[bird] + ' +
+			'Seek(가장 가까운 것→요격)@entity[hunter←bird] + Elastic(vel→stretch)@deform[bird] ×exa1.8'
+	);
+	await expect(page.locator('.badge')).toContainText('151 entities');
+	await expect(page.locator('.block.warn')).toHaveCount(0);
+
+	const shots: string[] = [];
+	for (const t of [21, 24, 27]) {
+		shots.push(await shot(page, `/?demo=scene-chase&t=${t}`));
+	}
+	await strip(
+		page,
+		shots,
+		['21s — 앞질러 간다', '24s — 무리를 가른다', '27s — 놓쳤다'],
+		`${SHOTS}/15-scene-chase.png`
+	);
+});

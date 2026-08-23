@@ -15,18 +15,12 @@
  * 순수 TS. DOM import 금지.
  */
 
+import { wrapCoord, wrapDelta } from '../core/space';
 import type { Core, Entity, ParamDef, Params, StepCtx, World } from '../core/types';
 
 const SEG = 1.3; // 로컬 지오메트리 = 아주 짧은 2점 선분. 정지하면 점, Elastic이 늘리면 선.
 const RESPONSE = 2.6; // 선회 응답 (1/s) — 목표 속도를 얼마나 빨리 따라잡는가
 const SEP_RATIO = 0.4; // 분리는 이웃 반경의 이 비율 안에서만 — 넓게 밀면 무리가 아니라 격자가 된다
-
-/** 토러스 최단 변위 — 화면 반대편 이웃도 이웃이다. 랩어라운드 이음매를 없앤다. */
-function wrapDelta(d: number, size: number): number {
-	if (d > size * 0.5) return d - size;
-	if (d < -size * 0.5) return d + size;
-	return d;
-}
 
 // 동시 갱신용 스크래치 — 모든 개체가 '같은 순간'의 이웃을 본다. 스텝마다 재할당하지 않는다.
 let accX = new Float64Array(0);
@@ -174,8 +168,8 @@ export const boids: Core = {
 			e.pos.x += e.vel.x * dt;
 			e.pos.y += e.vel.y * dt;
 			// 토러스: 나간 쪽으로 다시 들어온다 → 경계가 없으니 흐름이 정상 상태로 유지된다
-			e.pos.x = ((e.pos.x % W) + W) % W;
-			e.pos.y = ((e.pos.y % H) + H) % H;
+			e.pos.x = wrapCoord(e.pos.x, W);
+			e.pos.y = wrapCoord(e.pos.y, H);
 		}
 	}
 };

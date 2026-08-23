@@ -67,7 +67,7 @@ test('모든 프리셋이 소유 규칙을 지킨다', async ({ page }) => {
 		await page.locator('#demo').waitFor();
 		return page.locator('#demo option').evaluateAll((os) => os.map((o) => (o as HTMLOptionElement).value));
 	});
-	expect(ids.length).toBeGreaterThanOrEqual(13);
+	expect(ids.length).toBeGreaterThanOrEqual(14);
 	for (const id of ids) {
 		if (id === 'wind-bounce') continue; // 일부러 어긴 예시
 		await page.goto(`/?demo=${id}`);
@@ -163,4 +163,23 @@ test('포식자가 없으면 산개도 없다 — 앵커가 있어야 도피가 
 	await page.locator('canvas').waitFor();
 	await expect(page.getByTestId('p-flee-force')).toHaveValue('0');
 	await expect(page.locator('.block.warn')).toHaveCount(0);
+});
+
+test('그룹 앵커 — 무리가 줄어도 추격이 이어진다', async ({ page }) => {
+	const warn: string[] = [];
+	page.on('console', (m) => m.type() === 'warning' && warn.push(m.text()));
+
+	// t를 주면 일시정지 상태라 스텝이 안 돈다 — 개체 수 변화를 보려면 재생 중이어야 한다
+	await page.goto('/?demo=scene-chase');
+	await page.locator('canvas').waitFor();
+	await expect(page.locator('.badge')).toContainText('151 entities');
+
+	// 앵커 그룹의 크기를 실시간으로 바꿔도 라우팅 캐시가 따라온다
+	await page.getByTestId('p-boids-n').fill('40');
+	await expect(page.locator('.badge')).toContainText('41 entities');
+	await page.getByTestId('p-boids-n').fill('200');
+	await expect(page.locator('.badge')).toContainText('201 entities');
+
+	await expect(page.locator('.block.warn')).toHaveCount(0);
+	expect(warn.filter((m) => m.includes('kinesynth'))).toEqual([]);
 });

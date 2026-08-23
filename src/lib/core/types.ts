@@ -126,7 +126,11 @@ export interface Patch {
 	core: Core;
 	/** 이 코어가 작용할 엔티티. 기본 '*' (전체) */
 	target?: Selector;
-	/** 참조할 다른 엔티티의 태그. 코어가 ctx.anchor로 받는다 (예: 체인 뿌리) */
+	/**
+	 * 참조할 다른 엔티티의 태그. 코어는 `ctx.anchor`(첫 하나) 또는 `ctx.anchors`(전부)로 받는다.
+	 * 체인의 뿌리·공전의 중심처럼 하나면 되는 것이 있고,
+	 * 무리를 쫓는 추격처럼 **그룹 전체**가 필요한 것이 있다.
+	 */
 	anchor?: Selector;
 }
 
@@ -145,8 +149,10 @@ export interface StackItem {
 export interface StepCtx {
 	/** 이 패치가 작용할 엔티티들. 코어는 w.entities가 아니라 이걸 순회한다. */
 	targets: Entity[];
-	/** anchor 셀렉터로 찾은 첫 엔티티 (없으면 undefined) */
+	/** anchor 셀렉터로 찾은 첫 엔티티 (없으면 undefined). 하나면 되는 코어용. */
 	anchor?: Entity;
+	/** anchor 셀렉터에 걸린 **전부**. 무리를 참조하는 코어용 (추격·끌림 등). */
+	anchors: Entity[];
 	/** 이 패치의 대상 셀렉터. */
 	target: Selector;
 	/** 대상 태그를 붙여 세계에 들인다. targets에도 즉시 반영된다. */

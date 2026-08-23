@@ -21,6 +21,7 @@ import { noiseField } from './cores/noiseField';
 import { fourier } from './cores/fourier';
 import { orbit } from './cores/orbit';
 import { flee } from './cores/flee';
+import { seek } from './cores/seek';
 
 export interface Demo {
 	id: string;
@@ -202,6 +203,31 @@ export const demos: Demo[] = [
 		trail: true,
 		trailLen: 40,
 		seed: 11
+	},
+	{
+		id: 'scene-chase',
+		title: '사냥',
+		kind: 'scene',
+		form: '매가 무리를 쫓는다 — 앞질러 가고, 급선회에 놓치고, 다시 붙는다',
+		// Seek의 앵커는 **그룹**이다. 지금까지 앵커는 하나였는데(체인의 뿌리, 공전의 중심),
+		// 무리를 쫓으려면 무리 전체를 봐야 해서 ctx.anchors가 생겼다.
+		patch: [
+			{ core: flee, target: 'bird', anchor: 'hunter' },
+			{ core: boids, target: 'bird' },
+			{ core: seek, target: 'hunter', anchor: 'bird' },
+			{ core: elastic, target: 'bird' }
+		],
+		overrides: {
+			// 무리가 뭉쳐 있어야 '놓친다'가 성립한다 — 넓게 퍼져 있으면 늘 누군가가 가까워서
+			// 포식자가 영영 붙어 있고, 시도의 리듬이 사라진다
+			boids: { n: 150, radius: 110, sep: 2.3, ali: 1.15, coh: 2.2, speed: 155 },
+			flee: { radius: 165, force: 1900, sharp: 2 },
+			seek: { speed: 245, turn: 1.5, lead: 0.45, r: 13 },
+			elastic: { vmax: 135, kmax: 7 }
+		},
+		trail: true,
+		trailLen: 44,
+		seed: 3
 	},
 	{
 		id: 'dla-zoom',

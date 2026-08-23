@@ -350,7 +350,7 @@
 			"level": "flock",
 			"repeat": "event",
 			"principle_ko": "위협이 다가오면 흩어진다 — 구멍이 열렸다가 다시 메워진다.",
-			"rule": "d = |pos − anchor| · d < radius이면 vel += (pos−anchor)/d · force · (1−d/radius)^sharp (add) · 반경 밖은 0 · 속도 상한은 Boids가 쥔다 · 앵커는 한 프레임 전 위치(flock이 entity보다 먼저 돈다)",
+			"rule": "d = 토러스최단거리(pos, anchor) · d < radius이면 vel += (pos−anchor)/d · force · (1−d/radius)^sharp (add) · 반경 밖은 0 · 속도 상한은 Boids가 쥔다 · 앵커는 한 프레임 전 위치(flock이 entity보다 먼저 돈다)",
 			"params": [
 				"radius",
 				"force",
@@ -368,6 +368,41 @@
 			"refs": [
 				"Craig Reynolds, Steering Behaviors for Autonomous Characters, GDC 1999 — flee / evade",
 				"Procaccini et al., Propagating waves of avoidance in starling flocks under predation, Animal Behaviour 2011"
+			],
+			"status": "done",
+			"createdAt": "2026-08-24"
+		},
+		{
+			"id": "seek",
+			"name_ko": "추격",
+			"name_en": "Seek",
+			"domain": "bio",
+			"level": "entity",
+			"repeat": "event",
+			"principle_ko": "지금 자리가 아니라 갈 자리를 향한다 — 그래서 길이 짧아진다.",
+			"rule": "목표 = 가장 가까운 앵커(토러스 최단거리)의 pos + vel·lead · a = (목표방향·speed − vel)·turn · |vel| ≤ speed · rot = atan2(vel) · 선회 한계가 있어 급선회하는 먹이는 놓친다 → 시도가 반복된다",
+			"params": [
+				"speed",
+				"turn",
+				"lead",
+				"r"
+			],
+			"notation": "Seek(가장 가까운 것→요격)@entity",
+			"reads": [
+				"pos",
+				"vel"
+			],
+			"writes": [
+				"pos:add",
+				"vel:add",
+				"rot:set",
+				"points:set",
+				"closed:set"
+			],
+			"anchor": "쫓을 무리. **그룹으로 받는다** — 그중 가장 가까운 하나를 매 스텝 고른다.",
+			"refs": [
+				"Craig Reynolds, Steering Behaviors for Autonomous Characters, GDC 1999 — seek / pursue",
+				"Kane et al., Falcons pursue prey using visual motion cues, PNAS 2014 — 매의 요격 항법"
 			],
 			"status": "done",
 			"createdAt": "2026-08-24"
