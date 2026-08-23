@@ -12,12 +12,16 @@
  *   · 내려갈 때는 tau로 잦아든다
  * 겁먹은 만큼 **가장 겁먹은 이웃의 속도로 급히 붙는다** (동조) — 방향이 함께 실려 간다.
  *
+ * 이웃은 **이웃 격자**(core/grid.ts)로 찾는다 — Boids가 같은 대상을 보고 있으면
+ * 격자를 새로 만들지 않고 그대로 쓴다.
+ *
  * `sig.flee`는 Flee가 남긴 것을 읽고, `sig.panic`은 이 코어가 소유한다.
  * 뷰어의 「신호 보기」로 `panic`을 고르면 파동이 눈에 보인다.
  *
  * 순수 TS. DOM import 금지.
  */
 
+import { neighborGrid } from '../core/grid';
 import { wrapDelta } from '../core/space';
 import type { Core, ParamDef, Params, StepCtx, World } from '../core/types';
 
@@ -25,6 +29,7 @@ import type { Core, ParamDef, Params, StepCtx, World } from '../core/types';
 let nextP = new Float64Array(0);
 let accX = new Float64Array(0);
 let accY = new Float64Array(0);
+let cand = new Int32Array(0); // 격자가 돌려준 이웃 후보
 
 const params: ParamDef[] = [
 	{ key: 'radius', label: '전파 반경', min: 20, max: 300, value: 95, step: 5 },
@@ -68,7 +73,9 @@ export const panic: Core = {
 			nextP = new Float64Array(n);
 			accX = new Float64Array(n);
 			accY = new Float64Array(n);
+			cand = new Int32Array(n);
 		}
+		const grid = neighborGrid(w, es, p.radius);
 
 		const W = w.bounds.w;
 		const H = w.bounds.h;
@@ -81,7 +88,9 @@ export const panic: Core = {
 			let bvx = 0;
 			let bvy = 0;
 
-			for (let j = 0; j < n; j++) {
+			const m = grid.near(e.pos.x, e.pos.y, p.radius, cand);
+			for (let c = 0; c < m; c++) {
+				const j = cand[c];
 				if (i === j) continue;
 				const q = es[j];
 				const dx = wrapDelta(q.pos.x - e.pos.x, W);

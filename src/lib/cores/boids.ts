@@ -11,10 +11,13 @@
  * 속도 하한을 두지 않는다: 급선회하면 속도가 죽었다가 다시 붙는다 →
  * Elastic을 얹으면 그 순간이 **점 ↔ 선**으로 보인다.
  * 공간은 토러스(랩어라운드) — 벽이 없어야 흐름이 끊기지 않는다.
+ * 이웃은 전수 비교가 아니라 **이웃 격자**(core/grid.ts)로 찾는다. 같은 대상을 보는
+ * 다른 코어(Panic 등)와 격자 하나를 나눠 쓴다 — 라우팅이 같은 배열을 주기 때문이다.
  *
  * 순수 TS. DOM import 금지.
  */
 
+import { neighborGrid } from '../core/grid';
 import { wrapCoord, wrapDelta } from '../core/space';
 import type { Core, Entity, ParamDef, Params, StepCtx, World } from '../core/types';
 
@@ -25,6 +28,7 @@ const SEP_RATIO = 0.4; // 분리는 이웃 반경의 이 비율 안에서만 —
 // 동시 갱신용 스크래치 — 모든 개체가 '같은 순간'의 이웃을 본다. 스텝마다 재할당하지 않는다.
 let accX = new Float64Array(0);
 let accY = new Float64Array(0);
+let cand = new Int32Array(0); // 격자가 돌려준 이웃 후보
 
 function newBoid(w: World, ctx: StepCtx, maxV: number): Entity {
 	const a = w.rand() * Math.PI * 2;
@@ -88,7 +92,9 @@ export const boids: Core = {
 		if (accX.length < n) {
 			accX = new Float64Array(n);
 			accY = new Float64Array(n);
+			cand = new Int32Array(n);
 		}
+		const grid = neighborGrid(w, es, p.radius);
 
 		const W = w.bounds.w;
 		const H = w.bounds.h;
@@ -102,7 +108,9 @@ export const boids: Core = {
 			let cohX = 0, cohY = 0; // 응집: 이웃까지의 변위 합
 			let cnt = 0;
 
-			for (let j = 0; j < n; j++) {
+			const m = grid.near(a.pos.x, a.pos.y, p.radius, cand);
+			for (let c = 0; c < m; c++) {
+				const j = cand[c];
 				if (i === j) continue;
 				const b = es[j];
 				const dx = wrapDelta(b.pos.x - a.pos.x, W);

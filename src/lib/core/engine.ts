@@ -229,19 +229,26 @@ export function createEngine(
 	let acc = 0;
 	let trails: Vec[][] = [];
 
-	// 라우팅 캐시: 패치마다 대상·앵커 목록을 들고 있다가 rev가 바뀔 때만 다시 고른다.
+	// 라우팅 캐시: **셀렉터별로** 하나씩 둔다. 대상이든 앵커든 같은 셀렉터면 같은 캐시다.
+	// 그래서 `[bird]`를 보는 패치들이 **같은 배열**을 받는다 —
+	// 이웃 격자(core/grid.ts)가 그 배열 정체성으로 캐시를 잡으므로 Boids와 Panic이 격자를 나눠 쓴다.
 	// ctx 객체도 한 번만 만들고 필드만 갈아 끼운다 — 매 스텝 할당 0.
-	const routes = stack.map(() => ({ list: [] as Entity[], rev: -1 }));
-	const anchorRoutes = stack.map(() => ({ list: [] as Entity[], rev: -1 }));
+	const routeCache = new Map<Selector, { list: Entity[]; rev: number }>();
 
 	/** 셀렉터에 걸린 엔티티 목록. rev가 그대로면 지난 결과를 그대로 쓴다. */
-	function resolve(cache: { list: Entity[]; rev: number }, sel: Selector): Entity[] {
-		if (cache.rev !== world.rev) {
-			const tags = parseSelector(sel);
-			cache.list = world.entities.filter((e) => matches(e, tags));
-			cache.rev = world.rev;
+	function resolve(sel: Selector): Entity[] {
+		if (sel === ALL) return world.entities; // 전체면 거를 것도 없다
+		let c = routeCache.get(sel);
+		if (!c) {
+			c = { list: [], rev: -1 };
+			routeCache.set(sel, c);
 		}
-		return cache.list;
+		if (c.rev !== world.rev) {
+			const tags = parseSelector(sel);
+			c.list = world.entities.filter((e) => matches(e, tags));
+			c.rev = world.rev;
+		}
+		return c.list;
 	}
 	const ctxs: StepCtx[] = stack.map((p) => {
 		const sel = p.target;
@@ -272,10 +279,10 @@ export function createEngine(
 		const p = stack[i];
 		const sel = p.target;
 		const ctx = ctxs[i];
-		ctx.targets = sel === ALL ? world.entities : resolve(routes[i], sel);
+		ctx.targets = resolve(sel);
 		if (p.anchor) {
-			// 앵커도 대상과 같은 캐시 규칙 — 매 스텝 전체 스캔하지 않는다
-			ctx.anchors = p.anchor === ALL ? world.entities : resolve(anchorRoutes[i], p.anchor);
+			// 앵커도 대상과 같은 캐시 — 매 스텝 전체 스캔하지 않는다
+			ctx.anchors = resolve(p.anchor);
 			ctx.anchor = ctx.anchors[0];
 		}
 		return ctx;
@@ -324,8 +331,7 @@ export function createEngine(
 			world = createWorld(engine.seed, bounds);
 			acc = 0;
 			trails = [];
-			for (const r of routes) r.rev = -1;
-			for (const r of anchorRoutes) r.rev = -1;
+			routeCache.clear();
 			// 코어는 ctx.spawn으로 엔티티를 들인다 — 대상 태그가 자동으로 붙는다.
 			for (let i = 0; i < stack.length; i++) {
 				const p = stack[i];

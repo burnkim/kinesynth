@@ -1,0 +1,24 @@
+{
+	"seconds": 12,
+	"bounds": {
+		"w": 960,
+		"h": 720
+	},
+	"state": {
+		"lissajous": "1:-705592519",
+		"bounce-squash": "1:-1637665559",
+		"boids-elastic": "150:628522273",
+		"lissajous-spring": "1:-1247272657",
+		"bounce-tail": "2:142932759",
+		"noise-flock": "220:-1514402002",
+		"fourier": "1:1706601886",
+		"orbit": "3:-70121770",
+		"wind-bounce": "1:1775879373",
+		"dla": "557:562987092",
+		"panic-wave": "201:-1239219887",
+		"scene-murmuration": "380:388919946",
+		"scene-hunt": "301:487996258",
+		"scene-chase": "151:468345589",
+		"dla-zoom": "897:1178450783"
+	}
+}

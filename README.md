@@ -19,6 +19,7 @@ pnpm shots        # 스크린샷만 → shots/
 pnpm smoke        # 배포된 사이트 스모크 테스트
 pnpm gen:meta     # 코어 → src/lib/meta/cores.json 생성
 pnpm check:cores  # 코어 검증 (메타·파라미터 범위·순수성)
+pnpm check:determinism  # 결정론 회귀 — 같은 시드가 같은 결과를 내는가
 ```
 
 ## v0.1에 있는 것
@@ -50,6 +51,10 @@ pnpm check:cores  # 코어 검증 (메타·파라미터 범위·순수성)
 - **`exa` (과장 계수).** 1.0 = 물리적 사실. 슬라이더 하나로 사실↔만화를 넘나든다.
   스타일 = 법칙 × 과장.
 - **결정론.** 고정 타임스텝 1/60 + 시드 고정 난수(mulberry32) → 같은 시드 = 같은 움직임.
+  `pnpm check:determinism`이 프리셋 전부를 12초 돌려 상태 해시로 이걸 지킨다 —
+  성능만 고치려던 변경이 결과를 바꾸는 일을 막는다.
+- **이웃 격자.** 무리 코어는 전수 비교 대신 `core/grid.ts`를 쓴다. 같은 대상을 보는
+  코어들은 라우팅이 같은 배열을 주므로 **격자 하나를 나눠 쓴다** (500개체 2.4배, 380개체 3.1배).
 
 코어 14개. 레벨 4종(space·flock·entity·deform), 반복 4종(loop·steady·selfsim·event),
 도메인 5종(physics·math·bio·chem·earth)이 **모두 열려 있다**.
@@ -75,7 +80,7 @@ pnpm check:cores  # 코어 검증 (메타·파라미터 범위·순수성)
 ## 구조
 
 ```
-src/lib/core/    types rand engine noise space      ← 순수 TS. DOM·Svelte import 금지
+src/lib/core/    types rand engine noise space grid  ← 순수 TS. DOM·Svelte import 금지
 src/lib/cores/   lissajous bounce squash boids elastic spring dla
                  fractalZoom noiseField fourier orbit flee seek panic
 src/lib/cores/index.ts                          ← 레지스트리. 코어를 만들면 여기 등록
