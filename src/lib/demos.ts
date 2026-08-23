@@ -11,6 +11,8 @@ import type { Core, Params } from './core/types';
 import { lissajous } from './cores/lissajous';
 import { bounce } from './cores/bounce';
 import { squash } from './cores/squash';
+import { boids } from './cores/boids';
+import { elastic } from './cores/elastic';
 
 export interface Demo {
 	id: string;
@@ -44,6 +46,15 @@ export const demos: Demo[] = [
 		trail: false,
 		trailLen: 90,
 		seed: 1
+	},
+	{
+		id: 'boids-elastic',
+		title: 'Boids + Elastic',
+		form: '점이 늘어나 선이 되는 새떼 — exa를 0으로 내리면 다시 점이 된다',
+		cores: [boids, elastic],
+		trail: false,
+		trailLen: 24,
+		seed: 7
 	}
 ];
 

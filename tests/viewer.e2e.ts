@@ -35,3 +35,12 @@ test('같은 시드는 같은 그림을 만든다 (재현성)', async ({ page })
 	const b = await page.locator('.stage').screenshot();
 	expect(Buffer.compare(a, b)).toBe(0);
 });
+
+test('엔티티 500에서 실시간 60fps (PRD §8 성능 목표)', async ({ page }) => {
+	await page.goto('/?demo=boids-elastic&seed=7&p=boids.n:500');
+	await page.locator('canvas').waitFor();
+	await page.waitForTimeout(3000); // fps 측정창(0.5s)이 여러 번 돌도록
+	const fps = Number((await page.locator('.badge').innerText()).split(' ')[0]);
+	expect(await page.locator('.badge').innerText()).toContain('500 entities');
+	expect(fps).toBeGreaterThanOrEqual(55);
+});

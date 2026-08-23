@@ -11,7 +11,14 @@
 			"repeat": "loop",
 			"principle_ko": "수직인 두 흔들림을 겹치면 하나의 닫힌 궤도가 그려진다.",
 			"rule": "pos = (A·sin(a·θ+δ), B·sin(b·θ)), θ = 2π·speed·t · vel은 해석적 미분 · a:b가 정수비면 완전 루프",
-			"params": ["a", "b", "delta", "A", "B", "speed"],
+			"params": [
+				"a",
+				"b",
+				"delta",
+				"A",
+				"B",
+				"speed"
+			],
 			"notation": "Lissajous(a:b, δ)@entity",
 			"refs": [
 				"Jules Antoine Lissajous, 1857 — 소리굽쇠 진동의 광학적 합성",
@@ -29,7 +36,13 @@
 			"repeat": "event",
 			"principle_ko": "떨어진 만큼 튀어오르되, 부딪칠 때마다 조금씩 잃는다.",
 			"rule": "v += g·dt · 접지 시 v ← −e·v (반발계수 e) · 튕김 높이는 매 충돌마다 e²배 · 충격량 Δv=(1+e)|v|를 sig.impact로 방출",
-			"params": ["g", "e", "drift", "r", "h0"],
+			"params": [
+				"g",
+				"e",
+				"drift",
+				"r",
+				"h0"
+			],
 			"notation": "Bounce(g, e)@entity",
 			"refs": [
 				"Newton's experimental law of restitution, 1687",
@@ -47,11 +60,61 @@
 			"repeat": "event",
 			"principle_ko": "빠르면 늘어나고 부딪히면 납작해진다 — 부피는 그대로.",
 			"rule": "scale.y = 1 + K_s·exa·|vel.y|/vmax − K_q·exa·impact/vmax · scale.x = 1/scale.y (부피 보존) · exa 1.0 = 물리적 사실",
-			"params": ["exa", "vmax"],
+			"params": [
+				"exa",
+				"vmax"
+			],
 			"notation": "Squash(vel.y→scale)@deform",
 			"refs": [
 				"Thomas & Johnston, The Illusion of Life, 1981 — 12원칙 #1 Squash and Stretch",
 				"탄성체의 근사 비압축성 (Poisson ratio → 0.5)"
+			],
+			"status": "done",
+			"createdAt": "2026-08-23"
+		},
+		{
+			"id": "boids",
+			"name_ko": "새떼",
+			"name_en": "Boids",
+			"domain": "bio",
+			"level": "flock",
+			"repeat": "steady",
+			"principle_ko": "아무도 지휘하지 않는데 무리가 된다 — 옆을 보는 세 가지 규칙만으로.",
+			"rule": "이웃 반경 안에서 분리(−Σd/|d|²)·정렬(Σv)·응집(Σd) 세 방향을 가중 합 → 목표 방향 · 목표속도 = 방향×최고속도 · a = (목표속도 − v)·응답 · 속도 상한만, 하한 없음 · 공간은 토러스",
+			"params": [
+				"n",
+				"radius",
+				"sep",
+				"ali",
+				"coh",
+				"speed"
+			],
+			"notation": "Boids(분리·정렬·응집)@flock",
+			"refs": [
+				"Craig Reynolds, Flocks, Herds, and Schools: A Distributed Behavioral Model, SIGGRAPH 1987",
+				"Ballerini et al., Interaction ruling animal collective behaviour, PNAS 2008 — 거리보다 위상적 이웃"
+			],
+			"status": "done",
+			"createdAt": "2026-08-23"
+		},
+		{
+			"id": "elastic",
+			"name_ko": "진행 방향 신장",
+			"name_en": "Elastic",
+			"domain": "physics",
+			"level": "deform",
+			"repeat": "steady",
+			"principle_ko": "빠를수록 진행 방향으로 늘어난다 — 속도가 형태가 된다.",
+			"rule": "rot = atan2(vel) · scale.x = 1 + kmax·exa·(|v|/vmax)² (관성·항력이 v²에 비례) · scale.y = 1/scale.x (부피 보존) · 아주 짧은 2점 선분에 걸면 정지=점, 가속=선",
+			"params": [
+				"exa",
+				"kmax",
+				"vmax"
+			],
+			"notation": "Elastic(vel→stretch)@deform",
+			"refs": [
+				"Thomas & Johnston, The Illusion of Life, 1981 — Squash and Stretch / Exaggeration",
+				"사진의 모션 블러: 노출 시간 × 속도 = 스트리크 길이"
 			],
 			"status": "done",
 			"createdAt": "2026-08-23"

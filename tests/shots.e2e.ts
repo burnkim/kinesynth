@@ -87,3 +87,52 @@ test('exa 1.0 vs 2.5 — 사실에서 만화로', async ({ page }) => {
 
 	writeFileSync(`${SHOTS}/03-exa-compare.png`, Buffer.from(composed.split(',')[1], 'base64'));
 });
+
+test('boids + elastic — 점이 늘어나 선이 되는 새떼', async ({ page }) => {
+	await page.goto('/?demo=boids-elastic&seed=7&t=22');
+	await ready(page);
+	await expect(page.getByTestId('notation')).toHaveText(
+		'Boids(분리·정렬·응집)@flock + Elastic(vel→stretch)@deform ×exa1.8'
+	);
+	await page.locator('.stage').screenshot({ path: `${SHOTS}/04-boids-elastic.png` });
+});
+
+test('exa 0 vs 1.8 — 점이 선이 되는 순간', async ({ page }) => {
+	const shots: string[] = [];
+	for (const exa of [0, 1.8]) {
+		await page.goto(`/?demo=boids-elastic&seed=7&t=22&p=elastic.exa:${exa}`);
+		await ready(page);
+		shots.push(`data:image/png;base64,${(await page.locator('.stage').screenshot()).toString('base64')}`);
+	}
+	const composed = await page.evaluate(async ([a, b]) => {
+		const load = (src: string) =>
+			new Promise<HTMLImageElement>((res) => {
+				const img = new Image();
+				img.onload = () => res(img);
+				img.src = src;
+			});
+		const [ia, ib] = await Promise.all([load(a), load(b)]);
+		const gap = 16;
+		const bar = 56;
+		const cv = document.createElement('canvas');
+		cv.width = ia.width + ib.width + gap;
+		cv.height = Math.max(ia.height, ib.height) + bar;
+		const ctx = cv.getContext('2d')!;
+		ctx.fillStyle = '#0a0c11';
+		ctx.fillRect(0, 0, cv.width, cv.height);
+		ctx.drawImage(ia, 0, bar);
+		ctx.drawImage(ib, ia.width + gap, bar);
+		ctx.fillStyle = '#dce7ff';
+		ctx.font = '600 30px system-ui, sans-serif';
+		ctx.fillText('exa 0 — 점', 24, 38);
+		ctx.fillStyle = '#ffb44d';
+		ctx.fillText('exa 1.8 — 선', ia.width + gap + 24, 38);
+		ctx.strokeStyle = '#1e2942';
+		ctx.beginPath();
+		ctx.moveTo(ia.width + gap / 2, bar);
+		ctx.lineTo(ia.width + gap / 2, cv.height);
+		ctx.stroke();
+		return cv.toDataURL('image/png');
+	}, shots);
+	writeFileSync(`${SHOTS}/05-boids-exa.png`, Buffer.from(composed.split(',')[1], 'base64'));
+});

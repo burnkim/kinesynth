@@ -1,42 +1,76 @@
-# sv
+# Kinesynth
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+**움직임 코어 시스템** · v0.1 · 2026-08-23
 
-## Creating a project
+> Kinesynth = kinesis(운동) × synthesizer. 원리를 코어로, 코어를 합성해 움직임을 만든다.
 
-If you're seeing this, you've probably already done this step. Congrats!
+과학과 수학의 원리를 점·선·면의 반복 움직임(**코어**)으로 추상화하고, 서로 합성해
+새로운 움직임을 탄생시킨다. 재현이 아니라 **원리의 추상화** — 유체를 나비에-스토크스로
+풀지 않는다. 자세한 배경은 [PRD.md](PRD.md), 진행 상황은 [TODO.md](TODO.md).
 
-```sh
-# create a new project
-npx sv create my-app
+## 실행
+
+```bash
+pnpm install
+pnpm dev          # 뷰어
+pnpm check        # 타입 검사
+pnpm test:e2e     # Playwright (스크린샷 + 동작 검증)
+pnpm shots        # 스크린샷만 → shots/
 ```
 
-To recreate this project with the same configuration:
+## v0.1에 있는 것
 
-```sh
-# recreate this project
-pnpm dlx sv@0.17.0 create --template minimal --types ts --add playwright --no-download-check --install pnpm .
+| 데모 | 스택 | 도메인 / 레벨 / 반복 |
+|---|---|---|
+| Lissajous | `Lissajous(a:b, δ)@entity` | math / entity / loop |
+| Bounce + Squash | `Bounce(g, e)@entity + Squash(vel.y→scale)@deform ×exa` | physics / entity+deform / event |
+| Boids + Elastic | `Boids(분리·정렬·응집)@flock + Elastic(vel→stretch)@deform ×exa` | bio+physics / flock+deform / steady |
+
+- **합성 = 코어 스택.** 패치 케이블 없이 채널 공유로 모듈레이션이 일어난다 —
+  Bounce가 쓴 `vel`과 `sig.impact`를 Squash가 읽는다. 실행 순서는 레벨 순
+  `space → flock → entity → deform`.
+- **`exa` (과장 계수).** 1.0 = 물리적 사실. 슬라이더 하나로 사실↔만화를 넘나든다.
+  스타일 = 법칙 × 과장.
+- **결정론.** 고정 타임스텝 1/60 + 시드 고정 난수(mulberry32) → 같은 시드 = 같은 움직임.
+
+## URL로 상태 공유
+
+뷰어는 URL 파라미터로 장면을 그대로 재현한다 (아카이브·강의 링크 겸 스크린샷 훅).
+
+```
+/?demo=bounce-squash&seed=1&t=0.767&p=squash.exa:2.5
+/?demo=boids-elastic&seed=7&t=22&trail=1&p=boids.n:300
 ```
 
-## Developing
+| 파라미터 | 뜻 |
+|---|---|
+| `demo` | 프리셋 id (`lissajous` · `bounce-squash` · `boids-elastic`) |
+| `seed` | 숫자 또는 문자열 (문자열은 해시) |
+| `trail` | `1`이면 궤적 |
+| `t` | 그 시각까지 고정 스텝으로 감고 멈춘다 |
+| `p` | `코어.파라미터:값` 쉼표 구분 |
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+## 구조
 
-```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+```
+src/lib/core/    types.ts  rand.ts  engine.ts   ← 순수 TS. DOM·Svelte import 금지
+src/lib/cores/   lissajous  bounce  squash  boids  elastic
+src/lib/meta/    cores.json                     ← 코어 아카이브 (PRD §11 스키마)
+src/lib/         demos.ts  render.ts
+src/routes/      +page.svelte                   ← 뷰어
+tests/           shots.e2e.ts  viewer.e2e.ts
+shots/           스크린샷 기록
 ```
 
-## Building
+**코어 파일 = 강의 자료.** 파일당 ~100줄, 상단 주석에 원리 한 줄 + 표기법.
+`core/`·`cores/`는 외부 런타임 의존성 0 — 추후 독립 패키지로 뽑을 수 있게.
 
-To create a production version of your app:
+## 새 코어 추가하기
 
-```sh
-npm run build
-```
+1. `src/lib/cores/<id>.ts` — 상단 주석에 **원리 한 줄 + 표기법**, `meta`(domain/level/repeat/writes) + `params`(ParamDef) + `step`.
+2. `src/lib/demos.ts`에 프리셋 등록. 표기법 문자열은 엔진이 만든다.
+3. `src/lib/meta/cores.json`에 메타 추가 (rule·refs·status).
 
-You can preview the production build with `npm run preview`.
+## 조작
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+`Space` 재생/일시정지 · `R` 리셋 · 슬라이더는 ParamDef에서 자동 생성된다.
