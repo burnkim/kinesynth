@@ -4,37 +4,37 @@
 
 ## P0 스캐폴드
 
-- [ ] SvelteKit(Svelte 5) + TS strict 프로젝트 생성, pnpm, dev 서버 실행 확인
-- [ ] 디렉토리 구조 생성 (PRD §9), core 순수성 규칙을 types.ts 상단 주석에 명시
+- [x] SvelteKit(Svelte 5.56) + TS strict + Playwright, pnpm. `pnpm check` 0 errors
+- [x] PRD §9 구조 생성. 순수성 규칙(DOM·Svelte import 금지)을 types.ts 상단에 명시
 
 ## P1 코어 시스템
 
-- [ ] `core/types.ts` — Vec, Entity, World, ParamDef, Level, Repeat, CoreMeta, Core
-- [ ] `core/rand.ts` — mulberry32 시드 랜덤
-- [ ] `core/engine.ts` — createWorld(seed), 코어 스택 등록(레벨 순 정렬: space→flock→entity→deform), 고정 dt 1/60 + 어큐뮬레이터, reset
+- [x] `core/types.ts` — 스케치 + `writes(set/add/mul)` 선언, `Bounds`, `sig`(이벤트 신호 채널) 추가
+- [x] `core/rand.ts` — mulberry32 + 문자열 시드 해시(강의에서 이름을 시드로)
+- [x] `core/engine.ts` — 레벨 순 정렬, 고정 dt 1/60 + 어큐뮬레이터, reset, `seek(t)`(결정론적 탐색), 궤적 기록
 
 ## P2 첫 코어들
 
-- [ ] `cores/lissajous.ts` — math/entity/loop. pos = (A·sin(a·t+δ), B·sin(b·t)). 선언형, 완전 루프
-- [ ] `cores/bounce.ts` — physics/entity/event. 중력, 지면 반발(반발계수), 좌우 드리프트 옵션
-- [ ] `cores/squash.ts` — physics/deform/event. scale ← f(vel.y), 부피 보존(x·y≈1), **exa 파라미터**(1.0=사실)
-- [ ] 합성 데모 등록: bounce+squash 스택 → 표기법 문자열 자동 생성 확인
+- [x] `cores/lissajous.ts` — 선언형. vel은 해석적 미분으로 함께 써서 하위 deform이 읽게 함
+- [x] `cores/bounce.ts` — 로컬 원점을 발밑에 둠 → pos=접지점. 충격량을 `sig.impact`로 방출
+- [x] `cores/squash.ts` — 늘어남←속도, 찌그러짐←충격. exa 1.0/1.8/2.5 → sy 0.740/0.532/0.350
+- [x] `demos.ts` 프리셋. 표기법 자동 생성 검증: `Bounce(g, e)@entity + Squash(vel.y→scale)@deform ×exa1.8`
 
 ## P3 뷰어
 
-- [ ] Canvas2D 렌더 — 점(작은 원), 선(폴리라인), 면(닫힌 경로 + 옅은 채움). 어두운 배경, 밝은 스트로크
-- [ ] 파라미터 패널 — ParamDef 배열 → 슬라이더 자동 생성
-- [ ] 컨트롤 — 재생/일시정지/리셋, 시드 입력, 데모 프리셋 셀렉터, 트레일 토글
-- [ ] 표기법 문자열 + principle 한 줄 상시 표시 (강의 화면 겸용)
+- [x] `render.ts` — 점·선·면 + 지면. DPR 대응, 엔티티 60 초과 시 글로우 off
+- [x] ParamDef → 슬라이더 자동 생성. exa는 강조 색으로 구분
+- [x] 재생/일시정지(Space)·리셋(R)·시드·프리셋·트레일. URL 훅(`?demo&seed&trail&t&p=`)으로 공유 링크 겸 결정론적 촬영
+- [x] 헤더에 표기법 상시 표시, 코어별 principle 한 줄 + level/repeat 태그
 
 ## P4 데이터
 
-- [ ] `meta/cores.json` — lissajous, bounce, squash 3건 (PRD §11 스키마)
+- [x] `meta/cores.json` 3건 (rule·refs·status 포함)
 
 ## P5 1차 검증 (수직 슬라이스 체크포인트)
 
-- [ ] Playwright 스크린샷: lissajous, bounce+squash 각 1장 + exa 1.0 vs 2.5 비교 1장 → /shots 저장
-- [ ] 여기서 커밋 — 이 시점에 이미 v0 성립. P6은 그 위에 쌓는다
+- [x] `shots/01·02·03`. 뷰어 동작 테스트 3건 추가(슬라이더→엔진 반영, 프리셋 교체, 시드 재현성). 6/6 통과
+- [x] 커밋 완료
 
 ## P6 새떼 (P5 통과 후 진입)
 
@@ -43,3 +43,10 @@
 - [ ] 데모 프리셋 `Boids@flock + Elastic(vel→stretch)@deform` 등록
 - [ ] cores.json에 boids, elastic 추가 (총 5건)
 - [ ] 새떼 스크린샷 + 최종 DoD 체크(PRD §15) 후 커밋
+
+## 로그
+
+- `sig.impact` 미초기화 → `undefined * x = NaN`이 scale로 전파, `ctx.scale(NaN)`이 무시돼 공이 바닥을 통과했다. 소유 코어(Bounce)가 init에서 채널을 0으로 열도록 수정.
+- 스쿼시 피벗을 도형 중심에 두니 납작해진 공이 지면 위로 떴다. 로컬 원점을 발밑으로 옮겨 해결 — 상태 없이 접지가 유지된다.
+- 트레일을 프레임 페이드로 구현했더니 리프레시레이트에 좌우되고 8비트 정밀도에서 잔상이 갇혔다. 엔진이 궤적을 기록하는 방식으로 교체 → `seek`에서도 트레일이 남아 촬영이 결정론적.
+- Svelte 5 `$state` 프록시는 원본 객체로 write-through 하지 않는다. 슬라이더가 표시용 사본과 엔진 레코드를 명시적으로 둘 다 쓴다.

@@ -1,0 +1,60 @@
+{
+	"schema": "kinesynth.cores/v0.1",
+	"note": "코어 메타 아카이브. PRD §11 스키마. v0.2+에 nakcha/ital 스코어 필드가 추가된다 (ATLAS와 축 통일).",
+	"cores": [
+		{
+			"id": "lissajous",
+			"name_ko": "리사주",
+			"name_en": "Lissajous",
+			"domain": "math",
+			"level": "entity",
+			"repeat": "loop",
+			"principle_ko": "수직인 두 흔들림을 겹치면 하나의 닫힌 궤도가 그려진다.",
+			"rule": "pos = (A·sin(a·θ+δ), B·sin(b·θ)), θ = 2π·speed·t · vel은 해석적 미분 · a:b가 정수비면 완전 루프",
+			"params": ["a", "b", "delta", "A", "B", "speed"],
+			"notation": "Lissajous(a:b, δ)@entity",
+			"refs": [
+				"Jules Antoine Lissajous, 1857 — 소리굽쇠 진동의 광학적 합성",
+				"Nathaniel Bowditch, 1815 — 보디치 곡선"
+			],
+			"status": "done",
+			"createdAt": "2026-08-23"
+		},
+		{
+			"id": "bounce",
+			"name_ko": "튕김",
+			"name_en": "Bounce",
+			"domain": "physics",
+			"level": "entity",
+			"repeat": "event",
+			"principle_ko": "떨어진 만큼 튀어오르되, 부딪칠 때마다 조금씩 잃는다.",
+			"rule": "v += g·dt · 접지 시 v ← −e·v (반발계수 e) · 튕김 높이는 매 충돌마다 e²배 · 충격량 Δv=(1+e)|v|를 sig.impact로 방출",
+			"params": ["g", "e", "drift", "r", "h0"],
+			"notation": "Bounce(g, e)@entity",
+			"refs": [
+				"Newton's experimental law of restitution, 1687",
+				"Thomas & Johnston, The Illusion of Life — Timing"
+			],
+			"status": "done",
+			"createdAt": "2026-08-23"
+		},
+		{
+			"id": "squash",
+			"name_ko": "찌그러짐과 늘어남",
+			"name_en": "Squash & Stretch",
+			"domain": "physics",
+			"level": "deform",
+			"repeat": "event",
+			"principle_ko": "빠르면 늘어나고 부딪히면 납작해진다 — 부피는 그대로.",
+			"rule": "scale.y = 1 + K_s·exa·|vel.y|/vmax − K_q·exa·impact/vmax · scale.x = 1/scale.y (부피 보존) · exa 1.0 = 물리적 사실",
+			"params": ["exa", "vmax"],
+			"notation": "Squash(vel.y→scale)@deform",
+			"refs": [
+				"Thomas & Johnston, The Illusion of Life, 1981 — 12원칙 #1 Squash and Stretch",
+				"탄성체의 근사 비압축성 (Poisson ratio → 0.5)"
+			],
+			"status": "done",
+			"createdAt": "2026-08-23"
+		}
+	]
+}
