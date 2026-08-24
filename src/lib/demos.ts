@@ -23,6 +23,8 @@ import { orbit } from './cores/orbit';
 import { flee } from './cores/flee';
 import { seek } from './cores/seek';
 import { panic } from './cores/panic';
+import { life } from './cores/life';
+import { pop } from './cores/pop';
 
 export interface Demo {
 	id: string;
@@ -191,6 +193,19 @@ export const demos: Demo[] = [
 		trail: false,
 		trailLen: 30,
 		seed: 4
+	},
+	{
+		id: 'life',
+		title: 'Life + Pop · 라이프 게임',
+		form: '격자의 창발 — 규칙은 넷뿐인데 활공체가 생긴다. exa를 0으로 내리면 그냥 깜빡인다',
+		patch: [life, pop],
+		overrides: {
+			life: { cell: 24, period: 0.3, density: 0.33, grow: 0.2, fade: 0.26 },
+			pop: { exa: 1.8, breath: 0.06, rate: 0.35 }
+		},
+		trail: false,
+		trailLen: 20,
+		seed: 12
 	},
 	{
 		id: 'scene-murmuration',

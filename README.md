@@ -35,6 +35,7 @@ pnpm check:determinism  # 결정론 회귀 — 같은 시드가 같은 결과를
 | Bounce + Squash + Spring | `Bounce@entity[ball] + Squash@deform[ball] + Spring@deform[tail←ball]` | physics / entity+deform / event |
 | NoiseField + Boids | `NoiseField(flow)@space + Boids@flock + Elastic@deform` | math+bio / space+flock+deform / steady |
 | Fourier Epicycles | `Fourier(N항)@entity` | math / entity / loop |
+| Life + Pop · 라이프 게임 | `Life(B3/S23)@flock + Pop(생멸→scale)@deform ×exa` | math+physics / flock+deform / steady |
 | Orbit · 자전 + 공전 | `Orbit@entity[sun] + Orbit@entity[planet] + Orbit@entity[moon←planet]` | earth / entity / loop |
 
 **장면** — 코어들이 합쳐져 맥락이 읽히는 것. 뷰어 셀렉터에서 원리와 따로 묶여 있다.
@@ -56,7 +57,7 @@ pnpm check:determinism  # 결정론 회귀 — 같은 시드가 같은 결과를
 - **이웃 격자.** 무리 코어는 전수 비교 대신 `core/grid.ts`를 쓴다. 같은 대상을 보는
   코어들은 라우팅이 같은 배열을 주므로 **격자 하나를 나눠 쓴다** (500개체 2.4배, 380개체 3.1배).
 
-코어 14개. 레벨 4종(space·flock·entity·deform), 반복 4종(loop·steady·selfsim·event),
+코어 16개. 레벨 4종(space·flock·entity·deform), 반복 4종(loop·steady·selfsim·event),
 도메인 5종(physics·math·bio·chem·earth)이 **모두 열려 있다**.
 축이 다 열린 뒤의 깊이는 칸이 아니라 **장면**에서 온다 — 매트릭스는 지도이지 할당량이 아니다.
 
@@ -82,7 +83,7 @@ pnpm check:determinism  # 결정론 회귀 — 같은 시드가 같은 결과를
 ```
 src/lib/core/    types rand engine noise space grid  ← 순수 TS. DOM·Svelte import 금지
 src/lib/cores/   lissajous bounce squash boids elastic spring dla
-                 fractalZoom noiseField fourier orbit flee seek panic
+                 fractalZoom noiseField fourier orbit flee seek panic life pop
 src/lib/cores/index.ts                          ← 레지스트리. 코어를 만들면 여기 등록
 src/lib/meta/    cores.json                     ← **생성물**. 손으로 고치지 않는다 (pnpm gen:meta)
 src/lib/         demos.ts  render.ts

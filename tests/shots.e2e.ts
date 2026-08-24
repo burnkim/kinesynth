@@ -305,3 +305,32 @@ test('panic — 공포가 개체보다 빨리 번진다', async ({ page }) => {
 		`${SHOTS}/16-panic-wave.png`
 	);
 });
+
+test('life — 격자의 창발, 혼돈에서 구조로', async ({ page }) => {
+	await page.goto('/?demo=life&t=26');
+	await ready(page);
+	await expect(page.getByTestId('notation')).toHaveText(
+		'Life(B3/S23)@flock + Pop(생멸→scale)@deform ×exa1.8'
+	);
+	await expect(page.locator('.block.warn')).toHaveCount(0);
+
+	const shots: string[] = [];
+	for (const t of [0.1, 6.4, 26]) {
+		shots.push(await shot(page, `/?demo=life&t=${t}`));
+	}
+	await strip(
+		page,
+		shots,
+		['0.1s — 무작위 수프', '6.4s — 엉킨다', '26s — 정지물·진동자가 남는다'],
+		`${SHOTS}/17-life.png`
+	);
+});
+
+test('life — exa가 깜빡임을 움직임으로 바꾼다', async ({ page }) => {
+	// 세대가 막 넘어간 직후. 갓 태어난 칸들이 트윈 한가운데에 있다.
+	const shots: string[] = [];
+	for (const exa of [0, 1.8]) {
+		shots.push(await shot(page, `/?demo=life&t=0.38&p=pop.exa:${exa}`));
+	}
+	await pair(page, shots, ['exa 0 — 그냥 켜진다', 'exa 1.8 — 지나쳤다가 자리 잡는다'], `${SHOTS}/18-life-exa.png`);
+});

@@ -23,6 +23,8 @@ import { orbit } from './orbit';
 import { flee } from './flee';
 import { seek } from './seek';
 import { panic } from './panic';
+import { life } from './life';
+import { pop } from './pop';
 
 export const cores: Core[] = [
 	lissajous,
@@ -38,9 +40,11 @@ export const cores: Core[] = [
 	orbit,
 	flee,
 	seek,
-	panic
+	panic,
+	life,
+	pop
 ];
 
 export const coreById = (id: string): Core | undefined => cores.find((c) => c.meta.id === id);
 
-export { lissajous, bounce, squash, boids, elastic, spring, dla, fractalZoom, noiseField, fourier, orbit, flee, seek, panic };
+export { lissajous, bounce, squash, boids, elastic, spring, dla, fractalZoom, noiseField, fourier, orbit, flee, seek, panic, life, pop };

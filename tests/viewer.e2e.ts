@@ -67,7 +67,7 @@ test('모든 프리셋이 소유 규칙을 지킨다', async ({ page }) => {
 		await page.locator('#demo').waitFor();
 		return page.locator('#demo option').evaluateAll((os) => os.map((o) => (o as HTMLOptionElement).value));
 	});
-	expect(ids.length).toBeGreaterThanOrEqual(15);
+	expect(ids.length).toBeGreaterThanOrEqual(16);
 	for (const id of ids) {
 		if (id === 'wind-bounce') continue; // 일부러 어긴 예시
 		await page.goto(`/?demo=${id}`);
@@ -211,4 +211,26 @@ test('신호 보기가 실제로 그림을 바꾼다', async ({ page }) => {
 	const on = await page.locator('.stage').screenshot();
 
 	expect(Buffer.compare(off, on)).not.toBe(0);
+});
+
+test('life — 세대는 이산, 트윈은 연속', async ({ page }) => {
+	// 세대 주기(0.3s)보다 짧은 간격으로 두 프레임을 뜨면 논리는 같아도 그림이 다르다.
+	// 트윈이 매 프레임 흐른다는 뜻 — 이게 깜빡임을 움직임으로 바꾼다.
+	await page.goto('/?demo=life&t=0.34');
+	await page.locator('canvas').waitFor();
+	await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+	const a = await page.locator('.stage').screenshot();
+
+	await page.goto('/?demo=life&t=0.42');
+	await page.locator('canvas').waitFor();
+	await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+	const b = await page.locator('.stage').screenshot();
+
+	expect(Buffer.compare(a, b)).not.toBe(0);
+
+	// 신호 목록에 생멸 채널이 뜬다 — Life가 writes에 선언해 뒀으니까
+	const opts = await page
+		.locator('[data-testid="signal"] option')
+		.evaluateAll((os) => os.map((o) => (o as HTMLOptionElement).value));
+	expect(opts).toEqual(['', 'age', 'fade']);
 });

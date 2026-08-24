@@ -439,6 +439,67 @@
 			],
 			"status": "done",
 			"createdAt": "2026-08-24"
+		},
+		{
+			"id": "life",
+			"name_ko": "라이프 게임",
+			"name_en": "Life",
+			"domain": "math",
+			"level": "flock",
+			"repeat": "steady",
+			"principle_ko": "이웃이 둘이나 셋이면 살고, 셋이면 태어난다 — 그것뿐인데 활공체가 생긴다.",
+			"rule": "B3/S23 · 이웃 3이면 탄생, 이웃 2~3이면 생존, 나머지는 사망 · 칸이 곧 색인이라 8이웃은 O(1) 조회 · 세대는 period마다, 트윈(sig.age·sig.fade)은 매 프레임 · 죽은 칸은 fade가 다 차야 지운다 · 공간은 토러스",
+			"params": [
+				"cell",
+				"period",
+				"density",
+				"grow",
+				"fade"
+			],
+			"notation": "Life(B3/S23)@flock",
+			"reads": [],
+			"writes": [
+				"pos:set",
+				"points:set",
+				"closed:set",
+				"sig.age:set",
+				"sig.fade:set"
+			],
+			"refs": [
+				"Martin Gardner, Mathematical Games, Scientific American 1970 — Conway의 Life 소개",
+				"Conway, Berlekamp & Guy, Winning Ways for Your Mathematical Plays, 1982 — 활공체·정지물·진동자"
+			],
+			"status": "done",
+			"createdAt": "2026-08-24"
+		},
+		{
+			"id": "pop",
+			"name_ko": "나고 짐",
+			"name_en": "Pop",
+			"domain": "physics",
+			"level": "deform",
+			"repeat": "event",
+			"principle_ko": "생기는 것은 제 크기를 지나쳤다가 자리 잡고, 사라지는 것은 오므라든다.",
+			"rule": "scale ×= outBack(sig.age, BACK·exa) · (1 − inBack(sig.fade, BACK·exa)) · (1 + breath·exa·sin(2π(rate·t + 위상))) · 위상은 엔티티 id에서 뽑아 서로 어긋나게 · exa 0이면 지나침도 부풂도 없다",
+			"params": [
+				"exa",
+				"breath",
+				"rate"
+			],
+			"notation": "Pop(생멸→scale)@deform",
+			"reads": [
+				"sig.age",
+				"sig.fade"
+			],
+			"writes": [
+				"scale:mul"
+			],
+			"refs": [
+				"Thomas & Johnston, The Illusion of Life, 1981 — Anticipation · Exaggeration",
+				"Robert Penner, Motion, Tween, and Easing, 2002 — back 이징의 되돌아옴"
+			],
+			"status": "done",
+			"createdAt": "2026-08-24"
 		}
 	]
 }
